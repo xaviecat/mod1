@@ -5,11 +5,11 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
+	QApplication	a(argc, argv);
+	MainWindow		w;
 
-    std::cout << "Hello cutie!" << std::endl;
+	std::cout << "Hello cutie!" << std::endl;
 
-    w.show();
-    return a.exec();
+	w.show();
+	return a.exec();
 }
