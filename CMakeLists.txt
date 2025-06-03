@@ -16,7 +16,7 @@ set(CMAKE_CXX_COMPILER "c++")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror")
 
-set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.9.0/gcc_64/lib/cmake")
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/goinfre/Qt/6.9.0/gcc_64/lib/cmake")
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
@@ -25,6 +25,9 @@ add_executable(${PROJECT_NAME}
     srcs/gui/mainwindow.cpp
     srcs/gui/mainwindow.hpp
     srcs/gui/mainwindow.ui
+	core/Map.cpp
+	core/Map.hpp
+		utils/errors.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
