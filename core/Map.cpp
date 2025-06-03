@@ -2,15 +2,18 @@
 
 Map::Map(const std::string& filename) {
     std::ifstream   infile(filename);
-    std::string     test;
+    std::string     vertex;
 
     if (!infile.is_open())
         throw std::runtime_error("failed to open file: " + filename);
 
     while (!infile.eof()){
-        infile >> test;
+        infile >> vertex;
         if (infile.eof()) break;
-        this->append(Map::_parseVertex(test));
+
+        QVector3D res = Map::_parseVertex(vertex);
+        if (!this->contains(res))
+            this->append(res);
     }
     infile.close();
 }
@@ -32,7 +35,6 @@ QVector3D Map::_parseVertex(const std::string& vertex) {
     stream >> rest;
     if (stream)
         throw runtime_error(ERR_INPUT_FILE ERR_SYNTAX);
-
     return {x, y, z};
 }
 
