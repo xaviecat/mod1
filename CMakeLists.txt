@@ -25,13 +25,16 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 add_executable(${PROJECT_NAME}
-
+		srcs/core/Map.cpp
+		srcs/core/Map.hpp
 		srcs/gui/Test.cpp
 		srcs/gui/Test.hpp
 		srcs/gui/mainwindow.cpp
 		srcs/gui/mainwindow.hpp
 		srcs/gui/mainwindow.ui
 		srcs/main.cpp
+		srcs/utils/colors.h
+		srcs/utils/errors.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

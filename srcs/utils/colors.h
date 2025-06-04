@@ -16,7 +16,7 @@
 //Good Message
 # define G_MSG(x)		BLUE << x << RESET
 //Error Message
-# define E_MSG(x)		RED << x << RESET
+# define END_MSG(x)		RED << x << RESET
 //Warning Message
 # define W_MSG(x)		BYELLOW UNDERLINE << x << RESET
 //Constructor Message
@@ -28,54 +28,54 @@
 //Debug Message
 # define D_MSG(x)		UNDERLINE RED << x << RESET
 
-# define S			"\001\033"
-# define E			"\002"
+# define START			"\001\033"
+# define END			"\002"
 
-# define RESET		S "[000m" E
-# define BOLD		S "[001m" E
-# define FAINT		S "[002m" E
-# define ITALIC		S "[003m" E
-# define UNDERLINE	S "[004m" E
-# define SBLINK		S "[005m" E
-# define FBLINK		S "[006m" E
-# define REVERSE	S "[007m" E
-# define HIDE		S "[008m" E
-# define STRIKE		S "[009m" E
+# define RESET		START "[000m" END
+# define BOLD		START "[001m" END
+# define FAINT		START "[002m" END
+# define ITALIC		START "[003m" END
+# define UNDERLINE	START "[004m" END
+# define SBLINK		START "[005m" END
+# define FBLINK		START "[006m" END
+# define REVERSE	START "[007m" END
+# define HIDE		START "[008m" END
+# define STRIKE		START "[009m" END
 
-# define BLACK		S "[030m" E
-# define RED		S "[031m" E
-# define GREEN		S "[032m" E
-# define YELLOW		S "[033m" E
-# define BLUE		S "[034m" E
-# define PURPLE		S "[035m" E
-# define CYAN		S "[036m" E
-# define GREY		S "[037m" E
+# define BLACK		START "[030m" END
+# define RED		START "[031m" END
+# define GREEN		START "[032m" END
+# define YELLOW		START "[033m" END
+# define BLUE		START "[034m" END
+# define PURPLE		START "[035m" END
+# define CYAN		START "[036m" END
+# define GREY		START "[037m" END
 
-# define BBLACK		S "[090m" E
-# define BRED		S "[091m" E
-# define BGREEN		S "[092m" E
-# define BYELLOW	S "[093m" E
-# define BBLUE		S "[094m" E
-# define BPURPLE	S "[095m" E
-# define BCYAN		S "[096m" E
-# define BGREY		S "[097m" E
+# define BBLACK		START "[090m" END
+# define BRED		START "[091m" END
+# define BGREEN		START "[092m" END
+# define BYELLOW	START "[093m" END
+# define BBLUE		START "[094m" END
+# define BPURPLE	START "[095m" END
+# define BCYAN		START "[096m" END
+# define BGREY		START "[097m" END
 
-# define BGBLACK	S "[040m" E
-# define BGRED		S "[041m" E
-# define BGGREEN	S "[042m" E
-# define BGYELLOW	S "[043m" E
-# define BGBLUE		S "[044m" E
-# define BGPURPLE	S "[045m" E
-# define BGCYAN		S "[046m" E
-# define BGGREY		S "[047m" E
+# define BGBLACK	START "[040m" END
+# define BGRED		START "[041m" END
+# define BGGREEN	START "[042m" END
+# define BGYELLOW	START "[043m" END
+# define BGBLUE		START "[044m" END
+# define BGPURPLE	START "[045m" END
+# define BGCYAN		START "[046m" END
+# define BGGREY		START "[047m" END
 
-# define BBGBLACK	S "[100m" E
-# define BBGRED		S "[101m" E
-# define BBGGREEN	S "[102m" E
-# define BBGYELLOW	S "[103m" E
-# define BBGBLUE	S "[104m" E
-# define BBGPURPLE	S "[105m" E
-# define BBGCYAN	S "[106m" E
-# define BBGGREY	S "[107m" E
+# define BBGBLACK	START "[100m" END
+# define BBGRED		START "[101m" END
+# define BBGGREEN	START "[102m" END
+# define BBGYELLOW	START "[103m" END
+# define BBGBLUE	START "[104m" END
+# define BBGPURPLE	START "[105m" END
+# define BBGCYAN	START "[106m" END
+# define BBGGREY	START "[107m" END
 
 #endif
