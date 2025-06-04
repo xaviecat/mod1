@@ -11,7 +11,7 @@ Map::Map(const std::string& filename) {
 		infile >> vertex;
 		if (infile.eof()) break;
 
-		QVector3D res = Map::_parseVertex(vertex);
+		QVector3D	res = Map::_parseVertex(vertex);
 		if (!this->contains(res))
 			this->append(res);
 	}
@@ -19,10 +19,10 @@ Map::Map(const std::string& filename) {
 }
 
 QVector3D Map::_parseVertex(const std::string& vertex) {
-	std::stringstream stream(vertex);
-	float	x,y,z;
-	char	sep1,sep2;
-	char	par1,par2;
+	std::stringstream	stream(vertex);
+	float				x,y,z;
+	char				sep1,sep2;
+	char				par1,par2;
 
 	if (vertex.find_first_of(')') != vertex.length() - 1
 		|| vertex.find_last_of('(') != 0)
@@ -31,7 +31,7 @@ QVector3D Map::_parseVertex(const std::string& vertex) {
 	if (!stream || sep1 != ',' || sep2 != ',' || par1 != '(' || par2 != ')')
 		throw runtime_error(ERR_INPUT_FILE ERR_SYNTAX);
 
-	std::string	rest;
+	std::string rest;
 	stream >> rest;
 	if (stream)
 		throw runtime_error(ERR_INPUT_FILE ERR_SYNTAX);

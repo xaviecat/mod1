@@ -1,15 +1,15 @@
 #include "gui/mainwindow.hpp"
-
 #include <iostream>
 #include <QApplication>
+#include "gui/Test.hpp"
 
 int main(int argc, char *argv[])
 {
 	QApplication	a(argc, argv);
-	MainWindow		w;
+	Test			drawGizmo(60, nullptr, (char *)"Draw Gizmo");
 
 	std::cout << "Hello cutie!" << std::endl;
+	drawGizmo.show();
 
-	w.show();
-	return a.exec();
+	return (a.exec());
 }

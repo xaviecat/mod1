@@ -8,8 +8,9 @@ CACHE				:=	CMakeCache.txt
 
 IGN_LEAKS			:=	valgrind_ignore_leaks.txt
 
-VALGRIND			:=	valgrind \
-						--track-fds=yes --show-mismatched-frees=yes --read-var-info=yes --track-origins=yes -s\
+VALGRIND			:=	valgrind -s\
+						--track-fds=yes --show-mismatched-frees=yes\
+						--read-var-info=yes --track-origins=yes\
 						--leak-check=full --show-leak-kinds=all\
 						--suppressions=$(IGN_LEAKS)\
 
@@ -35,7 +36,7 @@ clean				:
 
 .PHONY				:	fclean
 fclean				:
-					rm -rf $(BUILD) $(IGN_LEAKS)
+					rm -rf $(BUILD)
 
 .PHONY				:	re
 re					:	fclean all
