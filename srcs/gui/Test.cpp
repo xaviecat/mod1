@@ -3,6 +3,7 @@
 Test::Test(int framesPerSecond, QWidget *parent, char *name) : QOpenGLWidget(parent) {
 	setWindowTitle(QString::fromUtf8(name));
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
+	convertRawMap();
 
 	// setup display refresh
 	if(framesPerSecond == 0)
@@ -21,7 +22,7 @@ void Test::initializeGL() {
 	initializeOpenGLFunctions();
 
 	distance = -5.0;
-	xRot = 0;
+	xRot = 45;
 	yRot = 0;
 	zRot = 0;
 	glClearColor(0, 0, 0, 1);
@@ -45,13 +46,13 @@ void Test::paintGL() {
 
 	viewMatrix.lookAt(eye, center, up);
 
-	modelMatrix.rotate(xRot / 16.0f, 1.0f, 0.0f, 0.0f);
-	modelMatrix.rotate(yRot / 16.0f, 0.0f, 1.0f, 0.0f);
-	modelMatrix.rotate(zRot / 16.0f, 0.0f, 0.0f, 1.0f);
+	modelMatrix.rotate(xRot, 1.0f, 0.0f, 0.0f);
+	modelMatrix.rotate(yRot, 0.0f, 1.0f, 0.0f);
+	modelMatrix.rotate(zRot, 0.0f, 0.0f, 1.0f);
 
 	float aspect = static_cast<float>(width()) / static_cast<float>(height());
 
-	projectionMatrix.perspective(60.0f, aspect, 0.1f, 100.0f);
+	projectionMatrix.perspective(60.0f, aspect, 0.1f, 500.0f);
 
 	QMatrix4x4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
@@ -61,22 +62,66 @@ void Test::paintGL() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
+	drawTriangles();
+	drawGizmo();
+}
+
+void Test::drawTriangles()
+{
+	glBegin(GL_TRIANGLES);
+	for (int z = 0; z < quads_by_z; ++z) {
+		for (int x = 0; x < quads_by_x; ++x) {
+			int i = z * vertices_by_x + x;
+			glColor3f(0, 1, 0);
+
+			glVertex3f(vertices[i].x(), vertices[i].y(), vertices[i].z());
+			glVertex3f(vertices[i+vertices_by_x].x(), vertices[i+vertices_by_x].y(), vertices[i+vertices_by_x].z());
+			glVertex3f(vertices[i+1].x(), vertices[i+1].y(), vertices[i+1].z());
+
+			glColor3f(1, 0, 0);
+
+			glVertex3f(vertices[i+1].x(), vertices[i+1].y(), vertices[i+1].z());
+			glVertex3f(vertices[i+vertices_by_x].x(), vertices[i+vertices_by_x].y(), vertices[i+vertices_by_x].z());
+			glVertex3f(vertices[i+1+vertices_by_x].x(), vertices[i+1+vertices_by_x].y(), vertices[i+1+vertices_by_x].z());
+		}
+	}
+	glEnd();
+}
+
+void Test::drawGizmo() {
 	glBegin(GL_LINES); // x line (red)
+	{
 		glColor3d(1,0,0);
 		glVertex3f(0.0f, 0.0f, 0.0f);
 		glVertex3f(1.0f, 0.0f, 0.0f);
+	}
 	glEnd();
 	glBegin(GL_LINES); // y line (blue)
+	{
 		glColor3d(0,0,1);
 		glVertex3f(0.0f, 0.0f, 0.0f);
 		glVertex3f(0.0f, 1.0f, 0.0f);
+	}
 	glEnd();
 	glBegin(GL_LINES); // z line (green)
+	{
 		glColor3d(0,1,0);
 		glVertex3f(0.0f, 0.0f, 0.0f);
 		glVertex3f(0.0f, 0.0f, 1.0f);
+	}
 	glEnd();
-
+}
+void Test::convertRawMap()
+{
+	for (qsizetype z = 0; z < rawMap.size(); z++) {
+		for (qsizetype x = 0; x < rawMap[z].size(); x++) {
+			QVector3D	vertex;
+			vertex.setX((SIZE_MAP * rawMap[z][x].x() / maxX) - SIZE_MAP / 2);
+			vertex.setY(rawMap[z][x].y() / maxY);
+			vertex.setZ((SIZE_MAP * rawMap[z][x].z() / maxZ) - SIZE_MAP / 2);
+			vertices.push_back(vertex);
+		}
+	}
 }
 
 void Test::resizeGL(int width, int height)
@@ -119,6 +164,7 @@ void Test::rotateBy(int x, int y, int z)
 	yRot += y;
 	zRot += z;
 }
+
 void Test::timeOutSlot()
 {
 	update();
