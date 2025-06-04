@@ -5,7 +5,7 @@ Map::Map(const std::string& filename) {
     std::string     vertex;
 
     if (!infile.is_open())
-        throw std::runtime_error("failed to open file: " + filename);
+        throw std::runtime_error(ERR_OPEN(filename));
 
     while (!infile.eof()){
         infile >> vertex;
