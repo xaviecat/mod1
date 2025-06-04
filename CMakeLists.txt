@@ -18,13 +18,24 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror")
 
 set(CMAKE_PREFIX_PATH "$ENV{HOME}/goinfre/Qt/6.9.0/gcc_64/lib/cmake")
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
-
-add_executable(${PROJECT_NAME}
-    srcs/main.cpp
-    srcs/gui/mainwindow.cpp
-    srcs/gui/mainwindow.hpp
-    srcs/gui/mainwindow.ui
+find_package(Qt6 REQUIRED COMPONENTS
+		Widgets
+		OpenGL
+		OpenGLWidgets
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
+add_executable(${PROJECT_NAME}
+
+		srcs/gui/Test.cpp
+		srcs/gui/Test.hpp
+		srcs/gui/mainwindow.cpp
+		srcs/gui/mainwindow.hpp
+		srcs/gui/mainwindow.ui
+		srcs/main.cpp
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+		Qt6::Widgets
+		Qt6::OpenGL
+		Qt6::OpenGLWidgets
+)

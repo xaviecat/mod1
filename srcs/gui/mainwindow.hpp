@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_HPP
-#define MAINWINDOW_HPP
+# define MAINWINDOW_HPP
 
-#include <QMainWindow>
+# include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
