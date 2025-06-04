@@ -1,0 +1,90 @@
+{
+	leak g_malloc
+		Memcheck:Leak
+		...
+		fun:g_malloc
+}
+{
+	leak g_realloc
+		Memcheck:Leak
+		...
+		fun:g_realloc
+}
+{
+	leak g_malloc0
+		Memcheck:Leak
+		...
+		fun:g_malloc0
+}
+{
+	leak X*
+		Memcheck:Leak
+		...
+		fun:X*
+}
+{
+	leak g_*
+		Memcheck:Leak
+		...
+		fun:g_*
+}
+{
+	leak dl_
+		Memcheck:Leak
+		...
+		fun:dl_*
+}
+{
+	leak _dl_
+		Memcheck:Leak
+		...
+		fun:_dl_*
+}
+{
+	leak pango
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/libpango*
+}
+{
+	leak pango
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/libgtk*
+}
+{
+	leak Syscall
+		Memcheck:Param
+		writev(vector[...])
+		fun:__writev
+}
+{
+	leak libfontconfig
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.12.0
+}
+{
+	leak radeonsi_dri
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/dri/radeonsi_dri.so
+}
+{
+	leak libdbus-1
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/libdbus-1.so.3.19.13
+}
+{
+	leak libfreetype
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/libfreetype.so.6.18.1
+}
+{
+	leak libX11
+		Memcheck:Leak
+		...
+		obj:/usr/lib/x86_64-linux-gnu/libX11.so.6.4.0
+}

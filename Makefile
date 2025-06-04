@@ -6,6 +6,14 @@ CMAKE_BUILD_TYPE	:=	Debug
 
 CACHE				:=	CMakeCache.txt
 
+IGN_LEAKS			:=	valgrind_ignore_leaks.txt
+
+VALGRIND			:=	valgrind -s\
+						--track-fds=yes --show-mismatched-frees=yes\
+						--read-var-info=yes --track-origins=yes\
+						--leak-check=full --show-leak-kinds=all\
+						--suppressions=$(IGN_LEAKS)\
+
 .PHONY				:	all
 all					:	$(BUILD)/$(CACHE)
 					cmake --build $(BUILD)
@@ -14,8 +22,13 @@ $(BUILD)/$(CACHE)	:
 					mkdir -p $(@D)
 					cmake -B $(BUILD) -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 
+.PHONY				:	run
 run					:	all
 					./$(BUILD)/$(NAME)
+
+.PHONY				:	leaks
+leaks				:	all $(IGN_LEAKS)
+					$(VALGRIND) ./$(BUILD)/$(NAME)
 
 .PHONY				:	clean
 clean				:
