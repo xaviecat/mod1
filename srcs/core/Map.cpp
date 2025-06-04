@@ -11,9 +11,14 @@ Map::Map(const std::string& filename) {
 		infile >> vertex;
 		if (infile.eof()) break;
 
-		QVector3D res = Map::_parseVertex(vertex);
-		if (!this->contains(res))
-			this->append(res);
+		QVector3D	res = Map::_parseVertex(vertex);
+//		for (const auto &item: *this)
+//			if (item.x() == res.x() && item.z() == res.z())
+//				throw std::runtime_error(ERR_DOUBLES);
+		if (this->contains(res))
+			throw std::runtime_error(ERR_DOUBLES);
+
+		this->append(res);
 	}
 	infile.close();
 }
