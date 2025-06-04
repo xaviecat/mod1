@@ -25,6 +25,9 @@ add_executable(${PROJECT_NAME}
     srcs/gui/mainwindow.cpp
     srcs/gui/mainwindow.hpp
     srcs/gui/mainwindow.ui
+	core/Map.cpp
+	core/Map.hpp
+		utils/errors.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
