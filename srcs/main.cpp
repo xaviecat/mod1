@@ -6,10 +6,10 @@
 int main(int argc, char *argv[])
 {
 	QApplication	a(argc, argv);
-	Test			drawGizmo(60, nullptr, (char *)"Draw Gizmo");
+	Test			drawCoordinate;
 
 	std::cout << "Hello cutie!" << std::endl;
-	drawGizmo.show();
+	drawCoordinate.show();
 
 	return (a.exec());
 }
