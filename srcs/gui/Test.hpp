@@ -13,6 +13,7 @@
 # include <QWheelEvent>
 # include <iostream>
 # include <QOpenGLBuffer>
+# include <QOpenGLShaderProgram>
 # define SIZE_MAP 2.5
 
 class Test : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -25,7 +26,7 @@ public:
 	void resizeGL(int width, int height) override;
 	void paintGL() override;
 
-	void drawGizmo();
+	void drawGizmo(QMatrix4x4 &mvpMatrix);
 
 	void initializeVertices();
 	void drawVerticesOneByOne();
@@ -34,10 +35,10 @@ public:
 	void drawVertexArray();
 
 	void initializeIndexArray();
+	void drawIndexArray();
 
 	void initializeBuffers();
 	void drawBuffers();
-	void drawIndexArray();
 
 	void paintEvent(QPaintEvent *event) override;
 	void keyPressEvent(QKeyEvent *keyEvent) override;
@@ -82,16 +83,30 @@ private:
 		INDEXARRAY,
 		BUFFERS
 	};
+
 	eRenderingMode	mode = VERTICES;
+	int				fillMode = GL_FILL;
 	Map				vertexArray;
 	QVector<GLuint>	indexArray;
 	QOpenGLBuffer	vertexBuffer;
 	QOpenGLBuffer	indexBuffer;
+	QOpenGLBuffer	normalBuffer;
 
+	QVector<QVector3D>	normales {
+			{0.5, 0.5, 0.5},{0.5, 0.5, 0.5},{0.5, 0.5, 0.5}, {0.5, 0.5, 0.5},
+			{0.5, 0.5, 0.5},{0.5, 0.5, 0.5},{0.5, 0.5, 0.5}, {0.5, 0.5, 0.5},
+			{0.5, 0.5, 0.5},{0.5, 0.5, 0.5},{0.5, 0.5, 0.5}, {0.5, 0.5, 0.5},
+			{0.5, 0.5, 0.5},{0.5, 0.5, 0.5},{0.5, 0.5, 0.5}, {0.5, 0.5, 0.5},
+	};
 	int				vertices_by_x = 4;
 	int				vertices_by_z = 4;
 	int				quads_by_x = 3;
 	int				quads_by_z = 3;
+	//Shader zone
+	QOpenGLShaderProgram	program;
+	int						matrixLocation;
+	int						vertexAttribute;
+	int						normalAttribute;
 };
 
 #endif //TEST_HPP
