@@ -5,11 +5,15 @@
 
 class Triangle {
 private:
-	const QVector3D	_a;
-	const QVector3D	_b;
-	const QVector3D	_c;
+	QVector3D	_a;
+	QVector3D	_b;
+	QVector3D	_c;
 public:
 	Triangle(const QVector3D& a, const QVector3D& b, const QVector3D& c);
+	Triangle(const Triangle& src);
+
+	Triangle& operator=(const Triangle& src);
+
 	const QVector3D& a() const;
 	const QVector3D& b() const;
 	const QVector3D& c() const;
