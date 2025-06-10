@@ -12,7 +12,8 @@
 
 using namespace std;
 
-class Map : public QVector<QVector3D>{
+class Map : public QVector<QVector3D> {
+	using QVector<QVector3D>::QVector;
 private:
 	static QVector3D _parseVertex(const std::string& vertex);
 public:
