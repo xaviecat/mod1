@@ -21,8 +21,6 @@ Test::Test(QWidget *parent)
 void Test::initializeGL() {
 	initializeOpenGLFunctions();
 
-	initializeVertexArray();
-	initializeIndexArray();
 	initializeBuffers();
 
 	distance = -5.0;
@@ -40,14 +38,20 @@ void Test::initializeGL() {
 
 	matrixLocation = program.uniformLocation("matrixpmv");
 	vertexAttribute = program.attributeLocation("vertex");
+	normalAttribute = program.attributeLocation("normal");
 
 	program.bind();
-	program.setUniformValue("fixed_color", QColor(Qt::white));
+	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
+	program.setUniformValue("light_direction", QVector4D(cos(0.0), 1.0, sin(0.0), 1.0));
 	program.release();
 
 	vertexBuffer.bind();
 	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
 	vertexBuffer.release();
+
+	normalBuffer.bind();
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 0);
+	normalBuffer.release();
 
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 1);
@@ -76,16 +80,16 @@ void Test::paintGL() {
 	QMatrix4x4	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
 	program.setUniformValue(matrixLocation, mvpMatrix);
-	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	program.setUniformValue("light_position", QVector4D(1.0, 1.0, 1.0, 1.0));
-	program.setUniformValue("light_direction", QVector4D(cos(0.0), 1.0, sin(0.0), 1.0));
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
 	vertexBuffer.bind();
 	program.enableAttributeArray(vertexAttribute);
 	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0 , 3);
 	vertexBuffer.release();
+
+	normalBuffer.bind();
+	program.enableAttributeArray(normalAttribute);
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0 , 3);
+	normalBuffer.release();
 
 	indexBuffer.bind();
 	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
@@ -118,8 +122,7 @@ void Test::paintEvent(QPaintEvent *event) {
 	painter.drawText(10, height()-15, QString("%1").arg(modeName[mode]));
 }
 
-void Test::drawBuffers()
-{
+void Test::drawBuffers() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
 	glPolygonMode(GL_BACK, GL_LINE);
@@ -140,23 +143,9 @@ void Test::drawBuffers()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::initializeBuffers()
-{
-	for (int z = 0; z < quads_by_z; ++z) {
-		for (int x = 0; x < quads_by_x; ++x) {
-			int i = z * vertices_by_x + x;
-
-			//first triangle
-			indexArray.push_back(i);
-			indexArray.push_back(i + vertices_by_x);
-			indexArray.push_back(i + 1);
-
-			//second triangle
-			indexArray.push_back(i + 1);
-			indexArray.push_back(i + vertices_by_x);
-			indexArray.push_back(i + 1 + vertices_by_x);
-		}
-	}
+void Test::initializeBuffers() {
+	initializeNormales();
+	initializeIndexArray();
 
 	vertexBuffer.create();
 	vertexBuffer.bind();
@@ -168,11 +157,10 @@ void Test::initializeBuffers()
 	indexBuffer.allocate(indexArray.constData(), indexArray.size() * sizeof(GLuint));
 	indexBuffer.release();
 
-void Test::initializeVertexArray()
-{
-	for (int z = 0; z < quads_by_z; ++z) {
-		for (int x = 0; x < quads_by_x; ++x) {
-			int i = z * vertices_by_x + x;
+	normalBuffer.create();
+	normalBuffer.bind();
+	normalBuffer.allocate(normales.constData(), normales.size() * sizeof(QVector3D));
+	normalBuffer.release();
 
 			//first triangle
 			vertexArray.push_back(vertices[i]);
@@ -187,8 +175,44 @@ void Test::initializeVertexArray()
 	}
 }
 
-void Test::drawIndexArray()
-{
+void Test::initializeNormales() {
+	normales.resize(vertices.size());
+
+	for (int z = 0; z < quads_by_z; ++z) {
+		for (int x = 0; x < quads_by_x; ++x) {
+			int i = z * vertices_by_x + x;
+
+			int i1 = i;
+			int i2 = i + vertices_by_x;
+			int i3 = i + 1;
+
+			QVector3D v1 = vertices[i2] - vertices[i1];
+			QVector3D v2 = vertices[i3] - vertices[i1];
+			QVector3D normal1 = QVector3D::crossProduct(v1, v2).normalized();
+
+			normales[i1] += normal1;
+			normales[i2] += normal1;
+			normales[i3] += normal1;
+
+			int i4 = i + 1;
+			int i5 = i + vertices_by_x;
+			int i6 = i + 1 + vertices_by_x;
+
+			QVector3D v3 = vertices[i5] - vertices[i4];
+			QVector3D v4 = vertices[i6] - vertices[i4];
+			QVector3D normal2 = QVector3D::crossProduct(v3, v4).normalized();
+
+			normales[i4] += normal2;
+			normales[i5] += normal2;
+			normales[i6] += normal2;
+		}
+	}
+
+	for (int i = 0; i < normales.size(); ++i) {
+		normales[i].normalize();
+	}
+}
+void Test::drawIndexArray() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
 	glPolygonMode(GL_BACK, GL_LINE);
@@ -203,8 +227,7 @@ void Test::drawIndexArray()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::initializeIndexArray()
-{
+void Test::initializeIndexArray() {
 	for (int z = 0; z < quads_by_z; ++z) {
 		for (int x = 0; x < quads_by_x; ++x) {
 			int i = z * vertices_by_x + x;
@@ -222,8 +245,7 @@ void Test::initializeIndexArray()
 	}
 }
 
-void Test::drawVertexArray()
-{
+void Test::drawVertexArray() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
 	glPolygonMode(GL_BACK, GL_LINE);
@@ -238,8 +260,7 @@ void Test::drawVertexArray()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::initializeVertexArray()
-{
+void Test::initializeVertexArray() {
 	for (int z = 0; z < quads_by_z; ++z) {
 		for (int x = 0; x < quads_by_x; ++x) {
 			int i = z * vertices_by_x + x;
@@ -257,8 +278,7 @@ void Test::initializeVertexArray()
 	}
 }
 
-void Test::drawVerticesOneByOne()
-{
+void Test::drawVerticesOneByOne() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
 	glPolygonMode(GL_BACK, GL_LINE);
@@ -328,13 +348,11 @@ void Test::drawGizmo(QMatrix4x4 &mvpMatrix) {
 	glEnd();
 }
 
-void Test::resizeGL(int width, int height)
-{
+void Test::resizeGL(int width, int height) {
 	glViewport(0,0, width, height);
 }
 
-void Test::keyPressEvent(QKeyEvent *keyEvent)
-{
+void Test::keyPressEvent(QKeyEvent *keyEvent) {
 	if (keyEvent->key() == Qt::Key_Escape)
 		close();
 	if (keyEvent->key() == Qt::Key_Space)
@@ -348,18 +366,15 @@ void Test::keyPressEvent(QKeyEvent *keyEvent)
 	// 		timer.start(delay);
 }
 
-void Test::wheelEvent(QWheelEvent *event)
-{
+void Test::wheelEvent(QWheelEvent *event) {
 	distance *= 1.0 + (1.0 * event->angleDelta().y() / 1200.0);
 }
 
-void Test::mousePressEvent(QMouseEvent *event)
-{
+void Test::mousePressEvent(QMouseEvent *event) {
 	lastPos = event->pos();
 }
 
-void Test::mouseMoveEvent(QMouseEvent *event)
-{
+void Test::mouseMoveEvent(QMouseEvent *event) {
 	int dx = event->position().x() - lastPos.x();
 	int dy = event->position().y() - lastPos.y();
 
@@ -371,15 +386,13 @@ void Test::mouseMoveEvent(QMouseEvent *event)
 	lastPos = event->pos();
 }
 
-void Test::rotateBy(int x, int y, int z)
-{
+void Test::rotateBy(int x, int y, int z) {
 	xRot += x;
 	yRot += y;
 	zRot += z;
 }
 
-void Test::timeOutSlot()
-{
+void Test::timeOutSlot() {
 	update();
 }
 

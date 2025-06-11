@@ -38,6 +38,7 @@ public:
 	void drawIndexArray();
 
 	void initializeBuffers();
+	void initializeNormales();
 	void drawBuffers();
 
 	void paintEvent(QPaintEvent *event) override;
@@ -101,11 +102,9 @@ private:
 
 	QOpenGLBuffer		vertexBuffer;
 	QOpenGLBuffer		indexBuffer;
+	QOpenGLBuffer		normalBuffer;
 
-	int				vertices_by_x = 4;
-	int				vertices_by_z = 4;
-	int				quads_by_x = 3;
-	int				quads_by_z = 3;
+	QVector<QVector3D>	normales;
 	qsizetype				vertices_by_x = 10;// = 257;
 	qsizetype				vertices_by_z = 10;// =257;
 	qsizetype				quads_by_x = 9;// = 256;
@@ -115,6 +114,7 @@ private:
 	int						matrixLocation;
 	int						vertexAttribute;
 	// int						normalAttribute;
+	int						normalAttribute;
 };
 
 #endif //TEST_HPP
