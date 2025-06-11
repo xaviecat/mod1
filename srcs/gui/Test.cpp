@@ -10,7 +10,6 @@ Test::Test(QWidget *parent)
 	initializeVertices();
 
 	// setup display refresh
-
 	connect(&timer, &QTimer::timeout, this, &Test::timeOutSlot);
 	delay = 0;
 	timer.start(delay);
@@ -30,72 +29,73 @@ void Test::initializeGL() {
 	xRot = 30;
 	yRot = -40;
 	zRot = 0;
-	glClearColor(0, 0, 0, 1);
+
+//Shader zone
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/terrain.vert"))
+		std::cerr << program.log().toStdString() << std::endl;
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/terrain.frag"))
+		std::cerr << program.log().toStdString() << std::endl;
+	if (!program.link())
+		std::cerr << program.log().toStdString() << std::endl;
+
+	matrixLocation = program.uniformLocation("matrixpmv");
+	vertexAttribute = program.attributeLocation("vertex");
+
+	program.bind();
+	program.setUniformValue("fixed_color", QColor(Qt::white));
+	program.release();
+
+	vertexBuffer.bind();
+	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
+	vertexBuffer.release();
+
 	glEnable(GL_DEPTH_TEST);
+	glClearColor(0, 0, 0, 1);
 }
 
 void Test::paintGL() {
 	//save initial matrix
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-
+	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	program.bind();
+
+	QMatrix4x4	viewMatrix;
+	viewMatrix.translate(0.0, 0.0, distance);
 
 	QMatrix4x4	modelMatrix;
-	QMatrix4x4	viewMatrix;
-	QMatrix4x4	projectionMatrix;
-
-	QVector3D	eye(0.0, 0.0, -distance);
-	QVector3D	center(0.0, 0.0, 0.0);
-	QVector3D	up(0.0, 1.0, 0.0);
-
-	viewMatrix.lookAt(eye, center, up);
-
 	modelMatrix.rotate(xRot, 1.0f, 0.0f, 0.0f);
 	modelMatrix.rotate(yRot, 0.0f, 1.0f, 0.0f);
 	modelMatrix.rotate(zRot, 0.0f, 0.0f, 1.0f);
 
-	float aspect = static_cast<float>(width()) / static_cast<float>(height());
+	QMatrix4x4	projectionMatrix;
+	projectionMatrix.perspective(60.0f,width() / height(), 0.1f, 500.0f);
 
-	projectionMatrix.perspective(60.0f, aspect, 0.1f, 500.0f);
+	QMatrix4x4	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
-	QMatrix4x4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(mvpMatrix.constData());
+	program.setUniformValue(matrixLocation, mvpMatrix);
+	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
+	program.setUniformValue("light_position", QVector4D(1.0, 1.0, 1.0, 1.0));
+	program.setUniformValue("light_direction", QVector4D(cos(0.0), 1.0, sin(0.0), 1.0));
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+	vertexBuffer.bind();
+	program.enableAttributeArray(vertexAttribute);
+	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0 , 3);
+	vertexBuffer.release();
 
-	switch (mode) {
-	case VERTICES:
-		drawVerticesOneByOne();
-		break;
-	case VERTEXARRAY:
-		drawVertexArray();
-		break;
-	case INDEXARRAY:
-		drawIndexArray();
-		break;
-	case BUFFERS:
-		drawBuffers();
-		break;
-	}
-	drawGizmo();
+	indexBuffer.bind();
+	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
+	indexBuffer.release();
+	program.disableAttributeArray(vertexAttribute);
 
-	//restore initial matrix
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glPopAttrib();
+	program.release();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	drawGizmo(mvpMatrix);
 
 	++frameCount;
 	QTime	actualTime = QTime::currentTime();
@@ -120,6 +120,10 @@ void Test::paintEvent(QPaintEvent *event) {
 
 void Test::drawBuffers()
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
+
 	glColor3f(1, 1, 1);
 	glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -132,6 +136,8 @@ void Test::drawBuffers()
 	indexBuffer.release();
 
 	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void Test::initializeBuffers()
@@ -161,17 +167,6 @@ void Test::initializeBuffers()
 	indexBuffer.bind();
 	indexBuffer.allocate(indexArray.constData(), indexArray.size() * sizeof(GLuint));
 	indexBuffer.release();
-}
-
-void Test::drawVertexArray()
-{
-	glColor3f(1, 0, 0);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertexArray.constData());
-	glDrawArrays(GL_TRIANGLES, 0, vertexArray.size());
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glEnd();
-}
 
 void Test::initializeVertexArray()
 {
@@ -194,12 +189,18 @@ void Test::initializeVertexArray()
 
 void Test::drawIndexArray()
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
+
 	glColor3f(0, 0, 1);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
 	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, indexArray.constData());
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glEnd();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void Test::initializeIndexArray()
@@ -221,8 +222,47 @@ void Test::initializeIndexArray()
 	}
 }
 
+void Test::drawVertexArray()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
+
+	glColor3f(1, 0, 0);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, vertexArray.constData());
+	glDrawArrays(GL_TRIANGLES, 0, vertexArray.size());
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glEnd();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void Test::initializeVertexArray()
+{
+	for (int z = 0; z < quads_by_z; ++z) {
+		for (int x = 0; x < quads_by_x; ++x) {
+			int i = z * vertices_by_x + x;
+
+			//first triangle
+			vertexArray.push_back(vertices[i]);
+			vertexArray.push_back(vertices[i + vertices_by_x]);
+			vertexArray.push_back(vertices[i + 1]);
+
+			//second triangle
+			vertexArray.push_back(vertices[i + 1]);
+			vertexArray.push_back(vertices[i + vertices_by_x]);
+			vertexArray.push_back(vertices[i + 1 + vertices_by_x]);
+		}
+	}
+}
+
 void Test::drawVerticesOneByOne()
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
+
 	glBegin(GL_TRIANGLES);
 	for (int z = 0; z < quads_by_z; ++z) {
 		for (int x = 0; x < quads_by_x; ++x) {
@@ -239,22 +279,32 @@ void Test::drawVerticesOneByOne()
 		}
 	}
 	glEnd();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::initializeVertices()
-{
-	for (qsizetype z = 0; z < rawMap.size(); z++) {
-		for (qsizetype x = 0; x < rawMap[z].size(); x++) {
+void Test::initializeVertices() {
+	for (qsizetype z = 0; z < vertices_by_z; z++) {
+		for (qsizetype x = 0; x < vertices_by_x; x++) {
 			QVector3D	vertex;
-			vertex.setX((SIZE_MAP * rawMap[z][x].x() / maxX) - SIZE_MAP / 2);
-			vertex.setY(rawMap[z][x].y() / maxY);
-			vertex.setZ((SIZE_MAP * rawMap[z][x].z() / maxZ) - SIZE_MAP / 2);
+			vertex.setX((SIZE_MAP * rawMap[z][x].x() / vertices_by_x) - SIZE_MAP / 2);
+			if (x == 0 || x == vertices_by_x - 1 || z == 0 || z == vertices_by_z - 1)
+				vertex.setY(0);
+			else
+				vertex.setY(2.0 * rawMap[z][x].y() / 255);
+			vertex.setZ((SIZE_MAP * rawMap[z][x].z() / vertices_by_z) - SIZE_MAP / 2);
 			vertices.push_back(vertex);
 		}
 	}
 }
 
-void Test::drawGizmo() {
+void Test::drawGizmo(QMatrix4x4 &mvpMatrix) {
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(mvpMatrix.constData());
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
 	glBegin(GL_LINES); // x line (red)
 	{
 		glColor3d(1,0,0);
@@ -289,6 +339,8 @@ void Test::keyPressEvent(QKeyEvent *keyEvent)
 		close();
 	if (keyEvent->key() == Qt::Key_Space)
 		mode  = static_cast<eRenderingMode>((mode + 1) % 4);
+	if (keyEvent->key() == Qt::Key_F)
+		fillMode = fillMode == GL_LINE ? GL_FILL : GL_LINE;
 	// if (keyEvent->key() == Qt::Key_Up)
 	// 	if (delay < 50) ++delay;
 	// if (keyEvent->key() == Qt::Key_Down)
