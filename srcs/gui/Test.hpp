@@ -29,17 +29,15 @@ public:
 	void drawGizmo(QMatrix4x4 &mvpMatrix);
 
 	void initializeVertices();
-	void drawVerticesOneByOne();
-
-	void initializeVertexArray();
-	void drawVertexArray();
-
 	void initializeIndexArray();
-	void drawIndexArray();
-
-	void initializeBuffers();
 	void initializeNormales();
+	void initializeBuffers();
+	void initializeShaders();
+
+	void refreshMVPMatrix();
+
 	void drawBuffers();
+	void drawShaders();
 
 	void paintEvent(QPaintEvent *event) override;
 	void keyPressEvent(QKeyEvent *keyEvent) override;
@@ -73,48 +71,43 @@ private:
 		{{0, 58, 7}, {1, 53, 7}, {2, 48, 7}, {3, 48, 7}, {4, 200, 7}, {5, 220, 7}, {6, 200, 7}, {7, 60, 7}, {8, 62, 7}, {9, 66, 7}},
 		{{0, 55, 8}, {1, 54, 8}, {2, 53, 8}, {3, 58, 8}, {4, 150, 8}, {5, 180, 8}, {6, 150, 8}, {7, 64, 8}, {8, 66, 8}, {9, 72, 8}},
 		{{0, 53, 9}, {1, 54, 9}, {2, 57, 9}, {3, 59, 9}, {4, 57, 9}, {5, 58, 9}, {6, 66, 9}, {7, 69, 9}, {8, 67, 9}, {9, 71, 9}},
-
 	};
 
 	QVector<QVector3D>				vertices;
 	QString			modeName[4] = {
-		"Send vertices one by one",
-		"Send vertex array",
-		"Send index array",
-		"Send buffers" };
+		"Shaders drawing",
+		"Buffers drawing"
+	};
 	enum eRenderingMode {
-		VERTICES,
-		VERTEXARRAY,
-		INDEXARRAY,
+		SHADERS,
 		BUFFERS
 	};
-	eRenderingMode	mode = VERTICES;
-	Map				vertexArray;
-	QVector<GLuint>	indexArray;
-	QOpenGLBuffer	vertexBuffer;
-	QOpenGLBuffer	indexBuffer;
 
-	eRenderingMode		mode = VERTICES;
+	eRenderingMode		mode = SHADERS;
 	int					fillMode = GL_FILL;
 	Map					vertexArray;
 	QVector<GLuint>		indexArray;
 	QVector<QVector2D>	textures;
+
+	QMatrix4x4			mvpMatrix;
 
 	QOpenGLBuffer		vertexBuffer;
 	QOpenGLBuffer		indexBuffer;
 	QOpenGLBuffer		normalBuffer;
 
 	QVector<QVector3D>	normales;
-	qsizetype				vertices_by_x = 10;// = 257;
-	qsizetype				vertices_by_z = 10;// =257;
-	qsizetype				quads_by_x = 9;// = 256;
-	qsizetype				quads_by_z = 9;// = 256;
+	qsizetype				vertices_by_x;
+	qsizetype				vertices_by_z;
+	qsizetype				quads_by_x;
+	qsizetype				quads_by_z;
 	//Shader zone
 	QOpenGLShaderProgram	program;
 	int						matrixLocation;
 	int						vertexAttribute;
-	// int						normalAttribute;
 	int						normalAttribute;
+
+	bool					animation = false;
+	float					light_alpha = 0;
 };
 
 #endif //TEST_HPP

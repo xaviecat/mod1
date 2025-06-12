@@ -6,6 +6,14 @@ Test::Test(QWidget *parent)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
 
+	distance = -5.0;
+	xRot = 30;
+	yRot = -40;
+	zRot = 0;
+	vertices_by_x = 10;// = 257;
+	vertices_by_z = 10;// =257;
+	quads_by_x = 9;// = 256;
+	quads_by_z = 9;// = 256;
 	setWindowTitle("Draw Coordinate");
 	initializeVertices();
 
@@ -21,84 +29,24 @@ Test::Test(QWidget *parent)
 void Test::initializeGL() {
 	initializeOpenGLFunctions();
 
+	initializeIndexArray();
+	initializeNormales();
 	initializeBuffers();
-
-	distance = -5.0;
-	xRot = 30;
-	yRot = -40;
-	zRot = 0;
-
-//Shader zone
-	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/terrain.vert"))
-		std::cerr << program.log().toStdString() << std::endl;
-	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/terrain.frag"))
-		std::cerr << program.log().toStdString() << std::endl;
-	if (!program.link())
-		std::cerr << program.log().toStdString() << std::endl;
-
-	matrixLocation = program.uniformLocation("mvpmatrix");
-	vertexAttribute = program.attributeLocation("vertex");
-	normalAttribute = program.attributeLocation("normal");
-
-	program.bind();
-	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	program.setUniformValue("light_direction", QVector4D(cos(0.0), 1.0, sin(0.0), 1.0));
-	program.release();
-
-	vertexBuffer.bind();
-	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
-	vertexBuffer.release();
-
-	normalBuffer.bind();
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 0);
-	normalBuffer.release();
-
-	glEnable(GL_DEPTH_TEST);
-	glClearColor(0, 0, 0, 1);
+	initializeShaders();
 }
 
 void Test::paintGL() {
-	//save initial matrix
-	glEnable(GL_DEPTH_TEST);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, fillMode);
-	glPolygonMode(GL_BACK, GL_LINE);
+	refreshMVPMatrix();
 
-	program.bind();
+	switch (mode) {
+	case SHADERS:
+		drawShaders();
+		break;
+	case BUFFERS:
+		drawBuffers();
+		break;
+	}
 
-	QMatrix4x4	viewMatrix;
-	viewMatrix.translate(0.0, 0.0, distance);
-
-	QMatrix4x4	modelMatrix;
-	modelMatrix.rotate(xRot, 1.0f, 0.0f, 0.0f);
-	modelMatrix.rotate(yRot, 0.0f, 1.0f, 0.0f);
-	modelMatrix.rotate(zRot, 0.0f, 0.0f, 1.0f);
-
-	QMatrix4x4	projectionMatrix;
-	projectionMatrix.perspective(60.0f,width() / height(), 0.1f, 500.0f);
-
-	QMatrix4x4	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
-
-	program.setUniformValue(matrixLocation, mvpMatrix);
-
-	vertexBuffer.bind();
-	program.enableAttributeArray(vertexAttribute);
-	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0 , 3);
-	vertexBuffer.release();
-
-	normalBuffer.bind();
-	program.enableAttributeArray(normalAttribute);
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0 , 3);
-	normalBuffer.release();
-
-	indexBuffer.bind();
-	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
-	indexBuffer.release();
-	program.disableAttributeArray(vertexAttribute);
-
-	program.release();
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	drawGizmo(mvpMatrix);
 
 	++frameCount;
@@ -122,31 +70,83 @@ void Test::paintEvent(QPaintEvent *event) {
 	painter.drawText(10, height()-15, QString("%1").arg(modeName[mode]));
 }
 
-void Test::drawBuffers() {
+void Test::initializeShaders() {
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/terrain.vert"))
+		std::cerr << program.log().toStdString() << std::endl;
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/terrain.frag"))
+		std::cerr << program.log().toStdString() << std::endl;
+	if (!program.link())
+		std::cerr << program.log().toStdString() << std::endl;
+
+	matrixLocation = program.uniformLocation("mvpmatrix");
+	vertexAttribute = program.attributeLocation("vertex");
+	normalAttribute = program.attributeLocation("normal");
+
+	program.bind();
+	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
+	program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	program.release();
+
+	vertexBuffer.bind();
+	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
+	vertexBuffer.release();
+
+	normalBuffer.bind();
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 0);
+	normalBuffer.release();
+}
+
+void Test::drawShaders() {
+	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
 	glPolygonMode(GL_BACK, GL_LINE);
 
-	glColor3f(1, 1, 1);
-	glEnableClientState(GL_VERTEX_ARRAY);
+	program.bind();
+	program.setUniformValue(matrixLocation, mvpMatrix);
 
 	vertexBuffer.bind();
-	glVertexPointer(3, GL_FLOAT, 0, nullptr);
+	program.enableAttributeArray(vertexAttribute);
+	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0 , 3);
 	vertexBuffer.release();
+
+	normalBuffer.bind();
+	program.enableAttributeArray(normalAttribute);
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0 , 3);
+	normalBuffer.release();
 
 	indexBuffer.bind();
 	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
 	indexBuffer.release();
+	program.disableAttributeArray(vertexAttribute);
 
-	glDisableClientState(GL_VERTEX_ARRAY);
+	if (animation) {
+		light_alpha += 0.02;
+		if (light_alpha > 2 * M_PI) light_alpha -= 2 * M_PI;
+		program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	}
 
+	program.release();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::initializeBuffers() {
-	initializeNormales();
-	initializeIndexArray();
+void Test::refreshMVPMatrix() {
+	QMatrix4x4	modelMatrix;
+	QMatrix4x4	viewMatrix;
+	QMatrix4x4	projectionMatrix;
 
+	viewMatrix.translate(0.0, 0.0, distance);
+
+	modelMatrix.rotate(xRot, 1.0f, 0.0f, 0.0f);
+	modelMatrix.rotate(yRot, 0.0f, 1.0f, 0.0f);
+	modelMatrix.rotate(zRot, 0.0f, 0.0f, 1.0f);
+
+	projectionMatrix.perspective(60.0f, width() / height(), 0.1f, 500.0f);
+
+	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+}
+
+void Test::initializeBuffers() {
 	vertexBuffer.create();
 	vertexBuffer.bind();
 	vertexBuffer.allocate(vertices.constData(), vertices.size() * sizeof(QVector3D));
@@ -162,17 +162,28 @@ void Test::initializeBuffers() {
 	normalBuffer.allocate(normales.constData(), normales.size() * sizeof(QVector3D));
 	normalBuffer.release();
 
-			//first triangle
-			vertexArray.push_back(vertices[i]);
-			vertexArray.push_back(vertices[i + vertices_by_x]);
-			vertexArray.push_back(vertices[i + 1]);
+}
 
-			//second triangle
-			vertexArray.push_back(vertices[i + 1]);
-			vertexArray.push_back(vertices[i + vertices_by_x]);
-			vertexArray.push_back(vertices[i + 1 + vertices_by_x]);
-		}
-	}
+void Test::drawBuffers() {
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
+
+	glColor3f(0.0, 0.5, 1.0);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	vertexBuffer.bind();
+	glVertexPointer(3, GL_FLOAT, 0, nullptr);
+	vertexBuffer.release();
+
+	indexBuffer.bind();
+	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
+	indexBuffer.release();
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void Test::initializeNormales() {
@@ -212,20 +223,6 @@ void Test::initializeNormales() {
 		normales[i].normalize();
 	}
 }
-void Test::drawIndexArray() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, fillMode);
-	glPolygonMode(GL_BACK, GL_LINE);
-
-	glColor3f(0, 0, 1);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
-	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, indexArray.constData());
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glEnd();
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
 
 void Test::initializeIndexArray() {
 	for (int z = 0; z < quads_by_z; ++z) {
@@ -243,64 +240,6 @@ void Test::initializeIndexArray() {
 			indexArray.push_back(i + 1 + vertices_by_x);
 		}
 	}
-}
-
-void Test::drawVertexArray() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, fillMode);
-	glPolygonMode(GL_BACK, GL_LINE);
-
-	glColor3f(1, 0, 0);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertexArray.constData());
-	glDrawArrays(GL_TRIANGLES, 0, vertexArray.size());
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glEnd();
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
-
-void Test::initializeVertexArray() {
-	for (int z = 0; z < quads_by_z; ++z) {
-		for (int x = 0; x < quads_by_x; ++x) {
-			int i = z * vertices_by_x + x;
-
-			//first triangle
-			vertexArray.push_back(vertices[i]);
-			vertexArray.push_back(vertices[i + vertices_by_x]);
-			vertexArray.push_back(vertices[i + 1]);
-
-			//second triangle
-			vertexArray.push_back(vertices[i + 1]);
-			vertexArray.push_back(vertices[i + vertices_by_x]);
-			vertexArray.push_back(vertices[i + 1 + vertices_by_x]);
-		}
-	}
-}
-
-void Test::drawVerticesOneByOne() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, fillMode);
-	glPolygonMode(GL_BACK, GL_LINE);
-
-	glBegin(GL_TRIANGLES);
-	for (int z = 0; z < quads_by_z; ++z) {
-		for (int x = 0; x < quads_by_x; ++x) {
-			int i = z * vertices_by_x + x;
-			glColor3f(0, 1, 0);
-
-			glVertex3f(vertices[i].x(), vertices[i].y(), vertices[i].z());
-			glVertex3f(vertices[i + vertices_by_x].x(), vertices[i + vertices_by_x].y(), vertices[i + vertices_by_x].z());
-			glVertex3f(vertices[i + 1].x(), vertices[i + 1].y(), vertices[i + 1].z());
-
-			glVertex3f(vertices[i + 1].x(), vertices[i + 1].y(), vertices[i + 1].z());
-			glVertex3f(vertices[i + vertices_by_x].x(), vertices[i + vertices_by_x].y(), vertices[i + vertices_by_x].z());
-			glVertex3f(vertices[i + 1 + vertices_by_x].x(), vertices[i + 1 + vertices_by_x].y(), vertices[i + 1 + vertices_by_x].z());
-		}
-	}
-	glEnd();
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void Test::initializeVertices() {
@@ -356,9 +295,11 @@ void Test::keyPressEvent(QKeyEvent *keyEvent) {
 	if (keyEvent->key() == Qt::Key_Escape)
 		close();
 	if (keyEvent->key() == Qt::Key_Space)
-		mode  = static_cast<eRenderingMode>((mode + 1) % 4);
+		mode  = static_cast<eRenderingMode>((mode + 1) % 2);
 	if (keyEvent->key() == Qt::Key_F)
 		fillMode = fillMode == GL_LINE ? GL_FILL : GL_LINE;
+	if (keyEvent->key() == Qt::Key_L)
+		animation = !animation;
 	// if (keyEvent->key() == Qt::Key_Up)
 	// 	if (delay < 50) ++delay;
 	// if (keyEvent->key() == Qt::Key_Down)
