@@ -36,7 +36,7 @@ void Test::initializeGL() {
 	if (!program.link())
 		std::cerr << program.log().toStdString() << std::endl;
 
-	matrixLocation = program.uniformLocation("matrixpmv");
+	matrixLocation = program.uniformLocation("mvpmatrix");
 	vertexAttribute = program.attributeLocation("vertex");
 	normalAttribute = program.attributeLocation("normal");
 
