@@ -29,9 +29,9 @@ add_executable(${PROJECT_NAME}
 		srcs/core/Map.hpp
 		srcs/gui/OpenGLWidget.cpp
 		srcs/gui/OpenGLWidget.cpp
-		srcs/gui/mainwindow.cpp
-		srcs/gui/mainwindow.hpp
-		srcs/gui/mainwindow.ui
+		srcs/gui/MainWindow.cpp
+		srcs/gui/MainWindow.hpp
+		srcs/gui/MainWindow.ui
 		srcs/main.cpp
 		srcs/utils/colors.h
 		srcs/utils/errors.h
