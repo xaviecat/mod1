@@ -1,7 +1,11 @@
 #include "OpenGLWidget.hpp"
 
+#include "../core/Triangulator.hpp"
+
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
+	, vertices(Map("resources/big_map.mod1"))
+	, indexArray(Triangulator(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
@@ -15,8 +19,8 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 	quads_by_x = 9;// = 256;
 	quads_by_z = 9;// = 256;
 	setWindowTitle("Draw Coordinate");
-	initializeVertices();
-
+	// initializeVertices();
+	vertices.normalize();
 	// setup display refresh
 	connect(&timer, &QTimer::timeout, this, &OpenGLWidget::timeOutSlot);
 	delay = 0;
@@ -29,8 +33,9 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 void OpenGLWidget::initializeGL() {
 	initializeOpenGLFunctions();
 
-	initializeIndexArray();
-	initializeNormales();
+	// initializeIndexArray();
+	// initializeNormales();
+	normales = indexArray.normales;
 	initializeBuffers();
 	initializeShaders();
 }
@@ -99,8 +104,8 @@ void OpenGLWidget::initializeShaders() {
 void OpenGLWidget::drawShaders() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, fillMode);
-	glPolygonMode(GL_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, fillMode);
+	// glPolygonMode(GL_BACK, GL_LINE);
 
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);

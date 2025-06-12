@@ -1,6 +1,7 @@
 #ifndef TEST_HPP
 # define TEST_HPP
 # include "../core/Map.hpp"
+# include "../core/Triangulator.hpp"
 # include "../utils/colors.h"
 # include <QKeyEvent>
 # include <QMatrix4x4>
@@ -73,7 +74,7 @@ private:
 		{{0, 53, 9}, {1, 54, 9}, {2, 57, 9}, {3, 59, 9}, {4, 57, 9}, {5, 58, 9}, {6, 66, 9}, {7, 69, 9}, {8, 67, 9}, {9, 71, 9}},
 	};
 
-	QVector<QVector3D>				vertices;
+	Map				vertices;
 	QString			modeName[4] = {
 		"Shaders drawing",
 		"Buffers drawing"
@@ -85,8 +86,7 @@ private:
 
 	eRenderingMode		mode = SHADERS;
 	int					fillMode = GL_FILL;
-	Map					vertexArray;
-	QVector<GLuint>		indexArray;
+	Triangulator		indexArray;
 	QVector<QVector2D>	textures;
 
 	QMatrix4x4			mvpMatrix;

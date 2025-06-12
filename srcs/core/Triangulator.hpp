@@ -17,7 +17,7 @@ private:
 	bool _isInCircumCenter(const QVector3D& point, const QPointF& circumCenter, qreal radius) const;
 public:
 	Triangulator(const Map& vertices);
-
+	QVector<QVector3D> normales;
 	friend ostream &operator<<(ostream &os, const Triangulator &triangulator);
 };
 

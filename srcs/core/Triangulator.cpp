@@ -1,6 +1,9 @@
 #include "Triangulator.hpp"
 
+#include <complex>
+
 Triangulator::Triangulator(const Map &vertices) {
+	normales.resize(vertices.size());
 	for (auto it = vertices.begin(); it != vertices.end(); ++it){
 		if (it + 1 == vertices.end() || it + 2 == vertices.end())
 			break;
@@ -23,9 +26,24 @@ Triangulator::Triangulator(const Map &vertices) {
 					this->append(it - vertices.begin());
 					this->append(it1 - vertices.begin());
 					this->append(it2 - vertices.begin());
+
+					int i1 = it - vertices.begin();
+					int i2 = it1 - vertices.begin();
+					int i3 = it2 - vertices.begin();
+
+					QVector3D v1 = vertices[i2] - vertices[i1];
+					QVector3D v2 = vertices[i3] - vertices[i1];
+					QVector3D normal1 = QVector3D::crossProduct(v1, v2).normalized();
+
+					normales[i1] += normal1;
+					normales[i2] += normal1;
+					normales[i3] += normal1;
 				}
 			}
 		}
+	}
+	for (int i = 0; i < normales.size(); ++i) {
+		normales[i].normalize();
 	}
 }
 
