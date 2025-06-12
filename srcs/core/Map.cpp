@@ -22,6 +22,15 @@ Map::Map(const std::string& filename) {
 	else _offset =_max.x() / OFFSET_PROP;
 
 	_addCorners();
+
+	int i = 0;
+	for (auto &item:*this){
+		if (i % 2)
+			item.setX(item.x() + 0.2);
+		else
+			item.setZ(item.z() + 0.2);
+		i = !i;
+	}
 }
 
 bool Map::_checkDup(const QVector3D& point) const {
@@ -99,6 +108,14 @@ void Map::_setMinMax(qreal x, qreal y, qreal z) {
 }
 
 void Map::normalize() {
+	int i = 0;
+	for (auto &item:*this){
+		if (i % 2)
+			item.setX(item.x() - 0.2);
+		else
+			item.setZ(item.z() - 0.2);
+		i = !i;
+	}
 	if (_min.x() != 0){
 		for (auto &item: *this)
 			item.setX(item.x() - _min.x());
