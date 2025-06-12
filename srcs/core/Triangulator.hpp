@@ -8,6 +8,7 @@
 
 class Triangulator : public QVector<unsigned int>{
 private:
+	bool _containsVertices(const Map& vertices, const QPointF& circumCenter, qreal radius) const;
 	bool _checkValid(const QVector3D& a, const QVector3D& b, const QVector3D& c);
 	const QVector3D _getLineFromPoints(const QVector3D& pa, const QVector3D& pb) const;
 	const QVector3D _getPerpendicularBisector(const QVector3D& line, const QVector3D& pa, const QVector3D& pb) const;

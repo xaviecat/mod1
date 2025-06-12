@@ -8,29 +8,24 @@ Triangulator::Triangulator(const Map &vertices) {
 			if (it1 + 1 == vertices.end()) break;
 			for (auto it2 = it1 + 1; it2 != vertices.end(); ++it2){
 				QVector3D	a = *it;
-				QVector3D	b = *(it + 1);
-				QVector3D	c = *(it + 2);
-
-				cout << "index1: " << it - vertices.begin() << ", index2: " << it1 -vertices.begin() << ", index3: " << it2 - vertices.begin() << endl;
+				QVector3D	b = *(it1);
+				QVector3D	c = *(it2);
 
 				if (!_checkValid(a, b, c)) continue;
 
 				QPointF circumCenter = _getCircumCenter(a, b, c);
+				if (circumCenter.x() == -std::numeric_limits<double>::infinity()
+					|| circumCenter.x() == std::numeric_limits<double>::infinity())
+					continue;
 				//√(xA − xB)^2 + (yA − yB)^2
 				qreal radius = sqrt(pow(a.x() - circumCenter.x(), 2) + pow(a.z() - circumCenter.y(),2));
-				cout << "circumcenter: " << circumCenter.x() << ", " << circumCenter.y() << ", radius: " << radius << endl;
-
-//				if (!_containsVertices(vertices, circumCenter, radius))
-//				Triangle curr = Triangle(a, b, c);
-				this->append(it - vertices.begin());
-				this->append(it1 - vertices.begin());
-				this->append(it2 - vertices.begin());
-//				for (const auto &item : vertices)
-				cout << _isInCircumCenter({0, 0, 3.544}, circumCenter, radius) << endl;
+				if (!_containsVertices(vertices, circumCenter, radius)){
+					this->append(it - vertices.begin());
+					this->append(it1 - vertices.begin());
+					this->append(it2 - vertices.begin());
+				}
 			}
 		}
-
-//		break;
 	}
 }
 
@@ -77,7 +72,7 @@ Triangulator::_getCircumCenter(const QVector3D &pointA, const QVector3D &pointB,
 }
 
 bool Triangulator::_checkValid(const QVector3D &a, const QVector3D &b, const QVector3D &c) {
-	if (a.y() == b.y() || a.y() == c.y() || b.y() == c.y())
+	if ((a.z() == b.z() && a.z() == c.z()) || (a.x() == b.x() && a.x() == c.x()))
 		return false;
 	return true;
 }
@@ -86,6 +81,15 @@ bool Triangulator::_isInCircumCenter(const QVector3D &point, const QPointF &circ
 	qreal pointDistance =  sqrt(pow(point.x() - circumCenter.x(), 2) + pow(point.z() - circumCenter.y(),2));
 
 	return pointDistance < radius;
+}
+
+bool Triangulator::_containsVertices(const Map &vertices, const QPointF &circumCenter, qreal radius) const {
+	for (const auto &item: vertices){
+		qreal distanceToCircumCenter = sqrt(pow(item.x() - circumCenter.x(), 2) + pow(item.z() - circumCenter.y(), 2));
+		if (distanceToCircumCenter < radius - 0.01)
+			return true;
+	}
+	return false;
 }
 
 ostream &operator<<(ostream &os, const Triangulator &triangulator) {
