@@ -9,14 +9,20 @@
 # include <algorithm>
 # include <sstream>
 # include "../utils/errors.h"
+# define OFFSET_PROP 8
 
 using namespace std;
 
 class Map : public QVector<QVector3D> {
 	using QVector<QVector3D>::QVector;
 private:
-	static QVector3D _parseVertex(const std::string& vertex);
+	QVector3D _parseVertex(const std::string& vertex, bool first);
+	void _addCorners();
+	void _setMinMax(qreal x, qreal y, qreal z);
 	bool _checkDup(const QVector3D& point) const;
+	QVector3D _min;
+	QVector3D _max;
+	float _offset;
 public:
 	explicit Map(const std::string& filename);
 
