@@ -97,3 +97,23 @@ void Map::_setMinMax(qreal x, qreal y, qreal z) {
 	else if (z < _min.z())
 		_min.setZ(z);
 }
+
+void Map::normalize() {
+	if (_min.x() != 0){
+		for (auto &item: *this)
+			item.setX(item.x() - _min.x());
+		_max.setX(_max.x() - _min.x());
+		_min.setX(0);
+	}
+	if (_min.z() != 0){
+		for (auto &item: *this)
+			item.setZ(item.z() - _min.z());
+		_max.setZ(_max.z() - _min.z());
+		_min.setZ(0);
+	}
+	for (auto &item: *this){
+		item.setY(item.y() / _max.y());
+		item.setX(item.x() / _max.x() -0.5);
+		item.setZ(item.z() / _max.z() -0.5);
+	}
+}

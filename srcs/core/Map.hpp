@@ -27,6 +27,7 @@ public:
 	explicit Map(const std::string& filename);
 
 	friend std::ostream& operator<<(std::ostream& o, const Map& rhs);
+	void normalize();
 };
 
 #endif
