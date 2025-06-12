@@ -12,10 +12,15 @@ Map::Map(const std::string& filename) {
 		if (infile.eof()) break;
 
 		QVector3D	res = Map::_parseVertex(vertex);
-		if (!this->contains(res))
+		if (!_checkDup(res))
 			this->append(res);
 	}
 	infile.close();
+bool Map::_checkDup(const QVector3D& point) const {
+	for (auto const &item: *this)
+		if (point.z() == item.z() && point.x() == item.x())
+			return true;
+	return false;
 }
 
 QVector3D Map::_parseVertex(const std::string& vertex) {

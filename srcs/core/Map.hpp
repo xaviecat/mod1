@@ -16,6 +16,7 @@ class Map : public QVector<QVector3D> {
 	using QVector<QVector3D>::QVector;
 private:
 	static QVector3D _parseVertex(const std::string& vertex);
+	bool _checkDup(const QVector3D& point) const;
 public:
 	explicit Map(const std::string& filename);
 
