@@ -35,6 +35,10 @@ add_executable(${PROJECT_NAME}
 		srcs/main.cpp
 		srcs/utils/colors.h
 		srcs/utils/errors.h
+		srcs/core/Triangle.cpp
+		srcs/core/Triangle.hpp
+		srcs/core/Triangulator.cpp
+		srcs/core/Triangulator.hpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
