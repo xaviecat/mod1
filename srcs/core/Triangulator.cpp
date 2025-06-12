@@ -43,6 +43,8 @@ Triangulator::Triangulator(const Map &vertices) {
 		}
 	}
 	for (int i = 0; i < normales.size(); ++i) {
+		if (normales[i].y() < 0)
+			normales[i].setY(normales[i].y() * -1);
 		normales[i].normalize();
 	}
 }
