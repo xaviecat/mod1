@@ -1,6 +1,6 @@
-#include "Test.hpp"
+#include "OpenGLWidget.hpp"
 
-Test::Test(QWidget *parent)
+OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
@@ -18,7 +18,7 @@ Test::Test(QWidget *parent)
 	initializeVertices();
 
 	// setup display refresh
-	connect(&timer, &QTimer::timeout, this, &Test::timeOutSlot);
+	connect(&timer, &QTimer::timeout, this, &OpenGLWidget::timeOutSlot);
 	delay = 0;
 	timer.start(delay);
 	frameCount = 0;
@@ -26,7 +26,7 @@ Test::Test(QWidget *parent)
 	timeLastFrame = QTime::currentTime();
 }
 
-void Test::initializeGL() {
+void OpenGLWidget::initializeGL() {
 	initializeOpenGLFunctions();
 
 	initializeIndexArray();
@@ -35,7 +35,7 @@ void Test::initializeGL() {
 	initializeShaders();
 }
 
-void Test::paintGL() {
+void OpenGLWidget::paintGL() {
 	refreshMVPMatrix();
 
 	switch (mode) {
@@ -59,7 +59,7 @@ void Test::paintGL() {
 	}
 }
 
-void Test::paintEvent(QPaintEvent *event) {
+void OpenGLWidget::paintEvent(QPaintEvent *event) {
 	QOpenGLWidget::paintEvent(event);
 	QPainter painter(this);
 	painter.setPen(Qt::white);
@@ -70,7 +70,7 @@ void Test::paintEvent(QPaintEvent *event) {
 	painter.drawText(10, height()-15, QString("%1").arg(modeName[mode]));
 }
 
-void Test::initializeShaders() {
+void OpenGLWidget::initializeShaders() {
 	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/terrain.vert"))
 		std::cerr << program.log().toStdString() << std::endl;
 	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/terrain.frag"))
@@ -96,7 +96,7 @@ void Test::initializeShaders() {
 	normalBuffer.release();
 }
 
-void Test::drawShaders() {
+void OpenGLWidget::drawShaders() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
@@ -130,7 +130,7 @@ void Test::drawShaders() {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::refreshMVPMatrix() {
+void OpenGLWidget::refreshMVPMatrix() {
 	QMatrix4x4	modelMatrix;
 	QMatrix4x4	viewMatrix;
 	QMatrix4x4	projectionMatrix;
@@ -146,7 +146,7 @@ void Test::refreshMVPMatrix() {
 	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 }
 
-void Test::initializeBuffers() {
+void OpenGLWidget::initializeBuffers() {
 	vertexBuffer.create();
 	vertexBuffer.bind();
 	vertexBuffer.allocate(vertices.constData(), vertices.size() * sizeof(QVector3D));
@@ -164,7 +164,7 @@ void Test::initializeBuffers() {
 
 }
 
-void Test::drawBuffers() {
+void OpenGLWidget::drawBuffers() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT, fillMode);
@@ -186,7 +186,7 @@ void Test::drawBuffers() {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Test::initializeNormales() {
+void OpenGLWidget::initializeNormales() {
 	normales.resize(vertices.size());
 
 	for (int z = 0; z < quads_by_z; ++z) {
@@ -224,7 +224,7 @@ void Test::initializeNormales() {
 	}
 }
 
-void Test::initializeIndexArray() {
+void OpenGLWidget::initializeIndexArray() {
 	for (int z = 0; z < quads_by_z; ++z) {
 		for (int x = 0; x < quads_by_x; ++x) {
 			int i = z * vertices_by_x + x;
@@ -242,7 +242,7 @@ void Test::initializeIndexArray() {
 	}
 }
 
-void Test::initializeVertices() {
+void OpenGLWidget::initializeVertices() {
 	for (qsizetype z = 0; z < vertices_by_z; z++) {
 		for (qsizetype x = 0; x < vertices_by_x; x++) {
 			QVector3D	vertex;
@@ -257,7 +257,7 @@ void Test::initializeVertices() {
 	}
 }
 
-void Test::drawGizmo(QMatrix4x4 &mvpMatrix) {
+void OpenGLWidget::drawGizmo(QMatrix4x4 &mvpMatrix) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(mvpMatrix.constData());
 
@@ -287,11 +287,11 @@ void Test::drawGizmo(QMatrix4x4 &mvpMatrix) {
 	glEnd();
 }
 
-void Test::resizeGL(int width, int height) {
+void OpenGLWidget::resizeGL(int width, int height) {
 	glViewport(0,0, width, height);
 }
 
-void Test::keyPressEvent(QKeyEvent *keyEvent) {
+void OpenGLWidget::keyPressEvent(QKeyEvent *keyEvent) {
 	if (keyEvent->key() == Qt::Key_Escape)
 		close();
 	if (keyEvent->key() == Qt::Key_Space)
@@ -307,15 +307,15 @@ void Test::keyPressEvent(QKeyEvent *keyEvent) {
 	// 		timer.start(delay);
 }
 
-void Test::wheelEvent(QWheelEvent *event) {
+void OpenGLWidget::wheelEvent(QWheelEvent *event) {
 	distance *= 1.0 + (1.0 * event->angleDelta().y() / 1200.0);
 }
 
-void Test::mousePressEvent(QMouseEvent *event) {
+void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
 	lastPos = event->pos();
 }
 
-void Test::mouseMoveEvent(QMouseEvent *event) {
+void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
 	int dx = event->position().x() - lastPos.x();
 	int dy = event->position().y() - lastPos.y();
 
@@ -327,16 +327,16 @@ void Test::mouseMoveEvent(QMouseEvent *event) {
 	lastPos = event->pos();
 }
 
-void Test::rotateBy(int x, int y, int z) {
+void OpenGLWidget::rotateBy(int x, int y, int z) {
 	xRot += x;
 	yRot += y;
 	zRot += z;
 }
 
-void Test::timeOutSlot() {
+void OpenGLWidget::timeOutSlot() {
 	update();
 }
 
-Test::~Test() {
+OpenGLWidget::~OpenGLWidget() {
 	std::cout << C_MSG("Test destructor called") << std::endl;
 }

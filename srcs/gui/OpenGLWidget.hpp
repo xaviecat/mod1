@@ -16,11 +16,11 @@
 # include <QOpenGLShaderProgram>
 # define SIZE_MAP 5.0
 
-class Test : public QOpenGLWidget, protected QOpenGLFunctions {
+class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 	Q_OBJECT
 public:
-	explicit Test(QWidget *parent = nullptr);
-	~Test() override;
+	explicit OpenGLWidget(QWidget *parent = nullptr);
+	~OpenGLWidget() override;
 
 	void initializeGL() override;
 	void resizeGL(int width, int height) override;
