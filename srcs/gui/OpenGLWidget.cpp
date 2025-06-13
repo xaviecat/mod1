@@ -316,6 +316,8 @@ void OpenGLWidget::wheelEvent(QWheelEvent *event) {
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
 	lastPos = event->pos();
+	if (event->buttons() & Qt::LeftButton)
+		setFocus();
 }
 
 void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
