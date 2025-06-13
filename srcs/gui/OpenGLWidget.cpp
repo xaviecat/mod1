@@ -4,13 +4,13 @@
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
-	, vertices(Map("resources/big_map.mod1"))
+	, vertices(Map("resources/big_map2.mod1"))
 	, indexArray(Triangulator(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
 
-	distance = -5.0;
+	distance = -2.5;
 	xRot = 30;
 	yRot = -40;
 	zRot = 0;

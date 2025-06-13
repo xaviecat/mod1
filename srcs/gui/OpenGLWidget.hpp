@@ -94,6 +94,7 @@ private:
 	QOpenGLBuffer		vertexBuffer;
 	QOpenGLBuffer		indexBuffer;
 	QOpenGLBuffer		normalBuffer;
+	// QOpenGLBuffer		textureBuffer;
 
 	QVector<QVector3D>	normales;
 	qsizetype				vertices_by_x;
