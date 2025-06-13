@@ -1,8 +1,9 @@
 #ifndef TEST_HPP
 # define TEST_HPP
-# include "../core/Map.hpp"
-# include "../core/Triangulator.hpp"
-# include "../utils/colors.h"
+# include "Map.hpp"
+# include "Triangulator.hpp"
+# include "colors.h"
+
 # include <QKeyEvent>
 # include <QMatrix4x4>
 # include <QMouseEvent>

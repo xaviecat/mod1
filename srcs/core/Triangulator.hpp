@@ -3,7 +3,7 @@
 
 # include "Triangle.hpp"
 # include <QVector>
-#include <ostream>
+# include <ostream>
 # include "Map.hpp"
 
 class Triangulator : public QVector<unsigned int>{

@@ -1,7 +1,5 @@
 #include "OpenGLWidget.hpp"
 
-#include "../core/Triangulator.hpp"
-
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
 	, vertices(Map("resources/big_map.mod1"))

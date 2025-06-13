@@ -14,27 +14,26 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QOpenGLWidget" name="openGLWidget">
+   <property name="minimumSize">
+    <size>
+     <width>800</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>800</width>
+     <height>554</height>
+    </size>
+   </property>
+   <widget class="OpenGLWidget" name="openGLWidget">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>160</y>
-      <width>300</width>
-      <height>200</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>280</x>
+      <x>90</x>
       <y>60</y>
-      <width>111</width>
-      <height>41</height>
+      <width>591</width>
+      <height>401</height>
      </rect>
-    </property>
-    <property name="text">
-     <string>asdas</string>
     </property>
    </widget>
   </widget>
@@ -50,6 +49,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>OpenGLWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>OpenGLWidget.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

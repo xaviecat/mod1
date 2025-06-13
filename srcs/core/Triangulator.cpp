@@ -1,7 +1,5 @@
 #include "Triangulator.hpp"
 
-#include <complex>
-
 Triangulator::Triangulator(const Map &vertices) {
 	normales.resize(vertices.size());
 	for (auto it = vertices.begin(); it != vertices.end(); ++it){

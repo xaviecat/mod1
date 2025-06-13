@@ -28,7 +28,7 @@ add_executable(${PROJECT_NAME}
 		srcs/core/Map.cpp
 		srcs/core/Map.hpp
 		srcs/gui/OpenGLWidget.cpp
-		srcs/gui/OpenGLWidget.cpp
+		srcs/gui/OpenGLWidget.hpp
 		srcs/gui/MainWindow.cpp
 		srcs/gui/MainWindow.hpp
 		srcs/gui/MainWindow.ui
@@ -39,6 +39,12 @@ add_executable(${PROJECT_NAME}
 		srcs/core/Triangle.hpp
 		srcs/core/Triangulator.cpp
 		srcs/core/Triangulator.hpp
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/srcs/gui
+		${CMAKE_CURRENT_SOURCE_DIR}/srcs/core
+		${CMAKE_CURRENT_SOURCE_DIR}/srcs/utils
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
