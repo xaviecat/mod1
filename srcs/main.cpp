@@ -1,15 +1,15 @@
 #include "gui/mainwindow.hpp"
-
 #include <iostream>
 #include <QApplication>
+#include "gui/OpenGLWidget.hpp"
 
 int main(int argc, char *argv[])
 {
 	QApplication	a(argc, argv);
-	MainWindow		w;
+	OpenGLWidget			drawCoordinate;
 
 	std::cout << "Hello cutie!" << std::endl;
+	drawCoordinate.show();
 
-	w.show();
-	return a.exec();
+	return (a.exec());
 }
