@@ -5,7 +5,7 @@
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
 	, vertices(Map("resources/big_map2.mod1"))
-	, indexArray(Triangulator(vertices))
+	, indexArray(Triangulator(vertices).tesselated(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
@@ -172,7 +172,7 @@ void OpenGLWidget::initializeBuffers() {
 void OpenGLWidget::drawBuffers() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_FRONT, GL_LINE);
 	glPolygonMode(GL_BACK, GL_LINE);
 
 	glColor3f(0.0, 0.5, 1.0);
