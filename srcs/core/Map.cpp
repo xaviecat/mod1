@@ -17,8 +17,7 @@ Map::Map(const std::string& filename) {
 		first = false;
 	}
 	infile.close();
-	if (_max.y() >_max.x() && _max.y() > _max.z()) _offset = _max.y() / OFFSET_PROP;
-	else if (_max.z() >_max.x() && _max.z() > _max.y()) _offset = _max.z() / OFFSET_PROP;
+	if (_max.z() >_max.x() && _max.z() > _max.y()) _offset = _max.z() / OFFSET_PROP;
 	else _offset =_max.x() / OFFSET_PROP;
 
 	_addCorners();
@@ -31,6 +30,7 @@ Map::Map(const std::string& filename) {
 			item.setZ(item.z() + 0.2);
 		i = !i;
 	}
+	cout << *this << endl;
 }
 
 bool Map::_checkDup(const QVector3D& point) const {
