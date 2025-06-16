@@ -3,7 +3,8 @@
 
 # include "Triangle.hpp"
 # include <QVector>
-#include <ostream>
+# include "../utils/colors.h"
+# include <ostream>
 # include "Map.hpp"
 
 class Triangulator : public QVector<unsigned int>{
@@ -19,6 +20,7 @@ public:
 	Triangulator(const Map& vertices);
 	QVector<QVector3D> normales;
 	friend ostream &operator<<(ostream &os, const Triangulator &triangulator);
+	const Triangulator tesselated(Map& vertices) const;
 };
 
 
