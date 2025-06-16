@@ -129,7 +129,8 @@ void Map::normalize() {
 		_min.setZ(0);
 	}
 	for (auto &item: *this){
-		item.setY(item.y() / _max.y());
+		if (item.y())
+			item.setY(item.y() / _max.y());
 		item.setX(item.x() / _max.x() -0.5);
 		item.setZ(item.z() / _max.z() -0.5);
 	}

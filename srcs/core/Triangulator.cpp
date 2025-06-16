@@ -1,7 +1,5 @@
 #include "Triangulator.hpp"
 
-#include <complex>
-
 Triangulator::Triangulator(const Map &vertices) {
 	normales.resize(vertices.size());
 	for (auto it = vertices.begin(); it != vertices.end(); ++it){
@@ -118,4 +116,25 @@ ostream &operator<<(ostream &os, const Triangulator &triangulator) {
 		cout << ", " << *it;
 	cout << "}" << endl;
 	return os;
+}
+
+const Triangulator Triangulator::tesselated(Map &vertices) const {
+	if (this->size() % 3) return *this;
+	if (vertices.size() > 200)
+		cout << END_MSG("The provided map contains more than 200 vertices, the triangulation might take long...") << endl;
+	for (auto it = this->begin(); it != this->end();){
+		QVector3D pointA = vertices.at(*it);
+		QVector3D pointB = vertices.at(*(it + 1));
+		QVector3D pointC = vertices.at(*(it + 2));
+
+		QVector3D centroid(
+			(pointA.x() + pointB.x() + pointC.x()) / 3,
+			(pointA.y() + pointB.y() + pointC.y()) / 3,
+			(pointA.z() + pointB.z() + pointC.z()) / 3);
+		vertices.append(centroid);
+		it = it + 3;
+	}
+	if (vertices.size() < 200)
+		return (Triangulator(vertices).tesselated(vertices));
+	return Triangulator(vertices);
 }
