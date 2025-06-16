@@ -21,13 +21,13 @@ set(CMAKE_PREFIX_PATH "$ENV{HOME}/goinfre/Qt/6.9.0/gcc_64/lib/cmake")
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 add_executable(${PROJECT_NAME}
-    srcs/main.cpp
-    srcs/gui/mainwindow.cpp
-    srcs/gui/mainwindow.hpp
-    srcs/gui/mainwindow.ui
-	core/Map.cpp
-	core/Map.hpp
-		utils/errors.h
+	srcs/core/Map.cpp
+	srcs/core/Map.hpp
+	srcs/utils/errors.h
+	srcs/gui/mainwindow.cpp
+	srcs/gui/mainwindow.hpp
+	srcs/gui/mainwindow.ui
+	srcs/main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)

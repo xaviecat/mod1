@@ -14,11 +14,11 @@ using namespace std;
 
 class Map : public QVector<QVector3D>{
 private:
-    static QVector3D _parseVertex(const std::string& vertex);
+	static QVector3D _parseVertex(const std::string& vertex);
 public:
-    explicit Map(const std::string& filename);
+	explicit Map(const std::string& filename);
 
-    friend std::ostream& operator<<(std::ostream& o, const Map& rhs);
+	friend std::ostream& operator<<(std::ostream& o, const Map& rhs);
 };
 
 #endif
