@@ -17,12 +17,6 @@ Triangulator::Triangulator(const Map &vertices) {
 	for (auto& future : futures) {
 		future.waitForFinished();
 	}
-
-	QtConcurrent::blockingMap(normales, [](QVector3D& normal) {
-		if (normal.y() < 0)
-			normal.setY(normal.y() * -1);
-		normal.normalize();
-	});
 }
 
 void Triangulator::_triangulate(const Map &vertices, int threadId, int numThreads){
@@ -46,8 +40,9 @@ void Triangulator::_triangulate(const Map &vertices, int threadId, int numThread
 				if (!_containsVertices(vertices, circumCenter, radius)){
 					QVector3D v1 = b - a;
 					QVector3D v2 = c - a;
-					QVector3D normal = QVector3D::crossProduct(v1, v2).normalized();
-
+					QVector3D normal = QVector3D::crossProduct(v2, v1);
+					if (_isCCW(a, b, c))
+						normal = QVector3D::crossProduct(v1, v2);
 					localTriangles.append(Triangle(i, j, k, normal));
 				}
 			}
@@ -56,14 +51,33 @@ void Triangulator::_triangulate(const Map &vertices, int threadId, int numThread
 
 	QMutexLocker locker(&_dataMutex);
 	for (const auto& triangle : localTriangles) {
-		this->append(triangle.i1);
-		this->append(triangle.i2);
-		this->append(triangle.i3);
+		if (_isCCW(vertices.at(triangle.i1), vertices.at(triangle.i2), vertices.at(triangle.i3))){
+			this->append(triangle.i1);
+			this->append(triangle.i2);
+			this->append(triangle.i3);
+		}
+		else{
+			this->append(triangle.i1);
+			this->append(triangle.i3);
+			this->append(triangle.i2);
+		}
 
-		normales[triangle.i1] += triangle.normal;
-		normales[triangle.i2] += triangle.normal;
 		normales[triangle.i3] += triangle.normal;
+		normales[triangle.i2] += triangle.normal;
+		normales[triangle.i1] += triangle.normal;
 	}
+}
+
+bool Triangulator::_isCCW(const QVector3D& a, const QVector3D& b, const QVector3D& c) const{
+	QVector3D deltaBA = QVector3D(b.x(), b.z(), 0) - QVector3D(a.x(), a.z(), 0);
+	QVector3D deltaCA = QVector3D(c.x(), c.z(), 0) - QVector3D(a.x(), a.z(), 0);
+	QVector3D crossProduct = QVector3D::crossProduct(deltaBA, deltaCA);
+
+	if (crossProduct.z() < 0.0)
+		return true;
+	else
+		return false;
+
 }
 
 const QPointF Triangulator::_getIntersectionPoint(const QVector3D &lineA, const QVector3D &lineB) const {

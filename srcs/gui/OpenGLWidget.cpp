@@ -94,7 +94,7 @@ void OpenGLWidget::initializeShaders() {
 
 	program.bind();
 	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	program.setUniformValue("light_direction", QVector4D(1.0, 1.0,1.0, 1.0));
 	program.release();
 
 	vertexBuffer.bind();
@@ -102,15 +102,15 @@ void OpenGLWidget::initializeShaders() {
 	vertexBuffer.release();
 
 	normalBuffer.bind();
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 0);
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 3);
 	normalBuffer.release();
 }
 
 void OpenGLWidget::drawShaders() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, fillMode);
-	// glPolygonMode(GL_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
 
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);
@@ -179,7 +179,7 @@ void OpenGLWidget::initializeBuffers() {
 void OpenGLWidget::drawBuffers() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, GL_LINE);
+	glPolygonMode(GL_FRONT, GL_FILL);
 	glPolygonMode(GL_BACK, GL_LINE);
 
 	glColor3f(0.0, 0.5, 1.0);

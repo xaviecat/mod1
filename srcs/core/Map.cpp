@@ -30,7 +30,7 @@ Map::Map(const std::string& filename) {
 			item.setZ(item.z() + 0.2);
 		i = !i;
 	}
-	cout << *this << endl;
+	this->sort();
 }
 
 bool Map::_checkDup(const QVector3D& point) const {
@@ -134,4 +134,26 @@ void Map::normalize() {
 		item.setX(item.x() / _max.x() -0.5);
 		item.setZ(item.z() / _max.z() -0.5);
 	}
+}
+
+void Map::sort() {
+	cout << *this << endl << endl;
+	for (int i = 0; i < this->size() - 1;){
+		if (this->at(i).x() > this->at(i + 1).x()){
+			this->swapItemsAt(i, i + 1);
+			i > 1 ? i -= 2 : i = 0;
+		}
+		else
+			++i;
+	}
+	for (int i = 0; i < this->size() - 1;){
+		if (this->at(i).z() > this->at(i + 1).z()){
+			this->swapItemsAt(i, i + 1);
+			i > 1 ? i -= 2 : i = 0;
+		}
+		else
+			++i;
+	}
+	cout << *this << endl;
+	cout << endl;
 }

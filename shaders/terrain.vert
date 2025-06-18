@@ -1,15 +1,28 @@
 #version 130
 
 in vec4 vertex;
-in vec4 normal;
+in vec3 normal;
 uniform mat4 mvpmatrix;
-out float color_factor;
+
 uniform vec4 light_direction;
+uniform vec4 ambiant_color;
+
 out vec4 Color;
+out vec3 worldNormal;
+out vec3 worldPosition;
+
 void main(void)
 {
-    color_factor = max(dot(normal, light_direction), 0.0);
     gl_Position = mvpmatrix * vertex;
-    Color = vec4(vertex.y);
-    Color.a = 1;
+
+    worldPosition = vertex.xyz;
+    worldNormal = normalize(normal);
+
+    vec3 lightDir = normalize(light_direction.xyz);
+    float diffuse = max(dot(worldNormal, lightDir), 0.0);
+
+    vec3 ambient = ambiant_color.rgb;
+    vec3 finalColor = ambient + diffuse * vec3(0.6, 0.6, 0.6); // White diffuse light
+
+    Color = vec4(finalColor, 1.0);
 }
