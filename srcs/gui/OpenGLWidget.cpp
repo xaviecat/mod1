@@ -109,8 +109,8 @@ void OpenGLWidget::initializeShaders() {
 void OpenGLWidget::drawShaders() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, fillMode);
-	// glPolygonMode(GL_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
 
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);
@@ -179,7 +179,7 @@ void OpenGLWidget::initializeBuffers() {
 void OpenGLWidget::drawBuffers() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT, GL_LINE);
+	glPolygonMode(GL_FRONT, GL_FILL);
 	glPolygonMode(GL_BACK, GL_LINE);
 
 	glColor3f(0.0, 0.5, 1.0);
