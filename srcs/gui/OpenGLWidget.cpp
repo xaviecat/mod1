@@ -4,7 +4,7 @@
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
-	, vertices(Map("resources/big_map2.mod1"))
+	, vertices(Map("resources/big_map.mod1"))
 	, indexArray(Triangulator(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
@@ -14,13 +14,13 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 	xRot = 30;
 	yRot = -40;
 	zRot = 0;
-	vertices_by_x = 10;// = 257;
-	vertices_by_z = 10;// =257;
-	quads_by_x = 9;// = 256;
-	quads_by_z = 9;// = 256;
+	mode = SHADERS;
+	fillMode = GL_FILL;
 	setWindowTitle("Draw Coordinate");
-	// initializeVertices();
+
 	vertices.normalize();
+	initializeUVMap();
+
 	// setup display refresh
 	connect(&timer, &QTimer::timeout, this, &OpenGLWidget::timeOutSlot);
 	delay = 0;
@@ -33,8 +33,10 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 void OpenGLWidget::initializeGL() {
 	initializeOpenGLFunctions();
 
-	// initializeIndexArray();
-	// initializeNormales();
+	texture = new QOpenGLTexture(QImage("textures/rock.jpg").flipped());
+	texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+	texture->setMagnificationFilter(QOpenGLTexture::Linear);
+
 	normales = indexArray.normales;
 	initializeBuffers();
 	initializeShaders();
@@ -84,21 +86,15 @@ void OpenGLWidget::initializeShaders() {
 		std::cerr << program.log().toStdString() << std::endl;
 
 	matrixLocation = program.uniformLocation("mvpmatrix");
-	vertexAttribute = program.attributeLocation("vertex");
-	normalAttribute = program.attributeLocation("normal");
 
-	program.bind();
-	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
-	program.release();
+	program.bindAttributeLocation("aVertex", vertexAttribute);
+	program.bindAttributeLocation("aNormal", normalAttribute);
+	program.bindAttributeLocation("aTexCoords", textureAttribute);
 
-	vertexBuffer.bind();
-	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
-	vertexBuffer.release();
-
-	normalBuffer.bind();
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 0);
-	normalBuffer.release();
+	// program.bind();
+	// program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
+	// program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	// program.release();
 }
 
 void OpenGLWidget::drawShaders() {
@@ -110,20 +106,32 @@ void OpenGLWidget::drawShaders() {
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);
 
+	// glActiveTexture(GL_TEXTURE0);
+
 	vertexBuffer.bind();
 	program.enableAttributeArray(vertexAttribute);
-	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0 , 3);
+	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
 	vertexBuffer.release();
 
 	normalBuffer.bind();
 	program.enableAttributeArray(normalAttribute);
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0 , 3);
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 3);
 	normalBuffer.release();
 
+	textureBuffer.bind();
+	program.enableAttributeArray(textureAttribute);
+	program.setAttributeBuffer(textureAttribute, GL_FLOAT, 0, 2);
+	textureBuffer.release();
+
 	indexBuffer.bind();
+	texture->bind();
 	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
+	texture->release();
 	indexBuffer.release();
+
 	program.disableAttributeArray(vertexAttribute);
+	program.disableAttributeArray(normalAttribute);
+	program.disableAttributeArray(textureAttribute);
 
 	if (animation) {
 		light_alpha += 0.02;
@@ -167,6 +175,10 @@ void OpenGLWidget::initializeBuffers() {
 	normalBuffer.allocate(normales.constData(), normales.size() * sizeof(QVector3D));
 	normalBuffer.release();
 
+	textureBuffer.create();
+	textureBuffer.bind();
+	textureBuffer.allocate(UVMap.constData(), UVMap.size() * sizeof(QVector3D));
+	textureBuffer.release();
 }
 
 void OpenGLWidget::drawBuffers() {
@@ -191,74 +203,13 @@ void OpenGLWidget::drawBuffers() {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void OpenGLWidget::initializeNormales() {
-	normales.resize(vertices.size());
+void OpenGLWidget::initializeUVMap() {
+	for (auto vertex: vertices) {
+		QVector2D	texCoords;
 
-	for (int z = 0; z < quads_by_z; ++z) {
-		for (int x = 0; x < quads_by_x; ++x) {
-			int i = z * vertices_by_x + x;
-
-			int i1 = i;
-			int i2 = i + vertices_by_x;
-			int i3 = i + 1;
-
-			QVector3D v1 = vertices[i2] - vertices[i1];
-			QVector3D v2 = vertices[i3] - vertices[i1];
-			QVector3D normal1 = QVector3D::crossProduct(v1, v2).normalized();
-
-			normales[i1] += normal1;
-			normales[i2] += normal1;
-			normales[i3] += normal1;
-
-			int i4 = i + 1;
-			int i5 = i + vertices_by_x;
-			int i6 = i + 1 + vertices_by_x;
-
-			QVector3D v3 = vertices[i5] - vertices[i4];
-			QVector3D v4 = vertices[i6] - vertices[i4];
-			QVector3D normal2 = QVector3D::crossProduct(v3, v4).normalized();
-
-			normales[i4] += normal2;
-			normales[i5] += normal2;
-			normales[i6] += normal2;
-		}
-	}
-
-	for (int i = 0; i < normales.size(); ++i) {
-		normales[i].normalize();
-	}
-}
-
-void OpenGLWidget::initializeIndexArray() {
-	for (int z = 0; z < quads_by_z; ++z) {
-		for (int x = 0; x < quads_by_x; ++x) {
-			int i = z * vertices_by_x + x;
-
-			//first triangle
-			indexArray.push_back(i);
-			indexArray.push_back(i + vertices_by_x);
-			indexArray.push_back(i + 1);
-
-			//second triangle
-			indexArray.push_back(i + 1);
-			indexArray.push_back(i + vertices_by_x);
-			indexArray.push_back(i + 1 + vertices_by_x);
-		}
-	}
-}
-
-void OpenGLWidget::initializeVertices() {
-	for (qsizetype z = 0; z < vertices_by_z; z++) {
-		for (qsizetype x = 0; x < vertices_by_x; x++) {
-			QVector3D	vertex;
-			vertex.setX((SIZE_MAP * rawMap[z][x].x() / vertices_by_x) - SIZE_MAP / 2);
-			if (x == 0 || x == vertices_by_x - 1 || z == 0 || z == vertices_by_z - 1)
-				vertex.setY(0);
-			else
-				vertex.setY(2.0 * rawMap[z][x].y() / 255);
-			vertex.setZ((SIZE_MAP * rawMap[z][x].z() / vertices_by_z) - SIZE_MAP / 2);
-			vertices.push_back(vertex);
-		}
+		texCoords.setX(vertex.x());
+		texCoords.setY(vertex.z());
+		UVMap.push_back(texCoords);
 	}
 }
 

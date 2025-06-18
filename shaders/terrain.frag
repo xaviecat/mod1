@@ -1,11 +1,18 @@
-#version 130
+#version 460
 
+// Inputs from vertex shader
 in float color_factor;
-out vec4 color;
+in vec2 vTexCoord;
+
+// Uniforms from cpp
 uniform vec4 ambiant_color;
-in vec4 Color;
+uniform sampler2D texture2d;
+
+// Outputs for GPU
+out vec4 color;
+
 void main(void)
 {
-//    color = color_factor * ambiant_color;
-    color = Color;
+    vec4 texColor = texture(texture2d, vTexCoord.st);
+    color = texColor;
 }

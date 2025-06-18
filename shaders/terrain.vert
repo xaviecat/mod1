@@ -1,15 +1,21 @@
-#version 130
+#version 460
 
-in vec4 vertex;
-in vec4 normal;
+// Inputs from cpp
+in vec4 aNormal;
+in vec4 aVertex;
+in vec2 aTexCoords;
+
+// Uniforms from cpp
 uniform mat4 mvpmatrix;
-out float color_factor;
 uniform vec4 light_direction;
-out vec4 Color;
+
+// Outputs for fragment shader
+out vec2 vTexCoord;
+
 void main(void)
 {
-    color_factor = max(dot(normal, light_direction), 0.0);
-    gl_Position = mvpmatrix * vertex;
-    Color = vec4(vertex.y);
-    Color.a = 1;
+
+    gl_Position = mvpmatrix * aVertex;
+
+    vTexCoord = aTexCoords;
 }
