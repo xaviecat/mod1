@@ -102,7 +102,7 @@ void OpenGLWidget::initializeShaders() {
 	vertexBuffer.release();
 
 	normalBuffer.bind();
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 0);
+	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 3);
 	normalBuffer.release();
 }
 
