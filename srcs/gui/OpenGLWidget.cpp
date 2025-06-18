@@ -94,7 +94,7 @@ void OpenGLWidget::initializeShaders() {
 
 	program.bind();
 	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	program.setUniformValue("light_direction", QVector4D(1.0, 1.0,1.0, 1.0));
 	program.release();
 
 	vertexBuffer.bind();
