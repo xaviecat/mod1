@@ -1,18 +1,33 @@
 #include "Triangulator.hpp"
 
-#include <complex>
-
 Triangulator::Triangulator(const Map &vertices) {
 	normales.resize(vertices.size());
-	for (auto it = vertices.begin(); it != vertices.end(); ++it){
-		if (it + 1 == vertices.end() || it + 2 == vertices.end())
-			break;
-		for (auto it1 = it + 1; it1 != vertices.end(); ++it1){
-			if (it1 + 1 == vertices.end()) break;
-			for (auto it2 = it1 + 1; it2 != vertices.end(); ++it2){
-				QVector3D	a = *it;
-				QVector3D	b = *(it1);
-				QVector3D	c = *(it2);
+
+	int numThreads = QThread::idealThreadCount();
+	cout << "Ideal thread count: " << numThreads << endl;
+	QVector<QFuture<void>> futures;
+
+	for (int thread = 0; thread < numThreads; ++thread) {
+		QFuture<void> future = QtConcurrent::run([this, &vertices, thread, numThreads]() {
+			_triangulate(vertices, thread, numThreads);
+		});
+		futures.append(future);
+	}
+
+	for (auto& future : futures) {
+		future.waitForFinished();
+	}
+}
+
+void Triangulator::_triangulate(const Map &vertices, int threadId, int numThreads){
+	QVector<Triangle> localTriangles;
+
+	for (int i = threadId; i < vertices.size() - 2; i += numThreads){
+		for (int j = i + 1; j < vertices.size() - 1; ++j){
+			for (int k = j + 1; k < vertices.size(); ++k){
+				QVector3D	a = vertices[i];
+				QVector3D	b = vertices[j];
+				QVector3D	c = vertices[k];
 
 				if (!_checkValid(a, b, c)) continue;
 
@@ -23,30 +38,46 @@ Triangulator::Triangulator(const Map &vertices) {
 				//√(xA − xB)^2 + (yA − yB)^2
 				qreal radius = sqrt(pow(a.x() - circumCenter.x(), 2) + pow(a.z() - circumCenter.y(),2));
 				if (!_containsVertices(vertices, circumCenter, radius)){
-					this->append(it - vertices.begin());
-					this->append(it1 - vertices.begin());
-					this->append(it2 - vertices.begin());
-
-					int i1 = it - vertices.begin();
-					int i2 = it1 - vertices.begin();
-					int i3 = it2 - vertices.begin();
-
-					QVector3D v1 = vertices[i2] - vertices[i1];
-					QVector3D v2 = vertices[i3] - vertices[i1];
-					QVector3D normal1 = QVector3D::crossProduct(v1, v2).normalized();
-
-					normales[i1] += normal1;
-					normales[i2] += normal1;
-					normales[i3] += normal1;
+					QVector3D v1 = b - a;
+					QVector3D v2 = c - a;
+					QVector3D normal = QVector3D::crossProduct(v2, v1);
+					if (_isCCW(a, b, c))
+						normal = QVector3D::crossProduct(v1, v2);
+					localTriangles.append(Triangle(i, j, k, normal));
 				}
 			}
 		}
 	}
-	for (int i = 0; i < normales.size(); ++i) {
-		if (normales[i].y() < 0)
-			normales[i].setY(normales[i].y() * -1);
-		normales[i].normalize();
+
+	QMutexLocker locker(&_dataMutex);
+	for (const auto& triangle : localTriangles) {
+		if (_isCCW(vertices.at(triangle.i1), vertices.at(triangle.i2), vertices.at(triangle.i3))){
+			this->append(triangle.i1);
+			this->append(triangle.i2);
+			this->append(triangle.i3);
+		}
+		else{
+			this->append(triangle.i1);
+			this->append(triangle.i3);
+			this->append(triangle.i2);
+		}
+
+		normales[triangle.i3] += triangle.normal;
+		normales[triangle.i2] += triangle.normal;
+		normales[triangle.i1] += triangle.normal;
 	}
+}
+
+bool Triangulator::_isCCW(const QVector3D& a, const QVector3D& b, const QVector3D& c) const{
+	QVector3D deltaBA = QVector3D(b.x(), b.z(), 0) - QVector3D(a.x(), a.z(), 0);
+	QVector3D deltaCA = QVector3D(c.x(), c.z(), 0) - QVector3D(a.x(), a.z(), 0);
+	QVector3D crossProduct = QVector3D::crossProduct(deltaBA, deltaCA);
+
+	if (crossProduct.z() < 0.0)
+		return true;
+	else
+		return false;
+
 }
 
 const QPointF Triangulator::_getIntersectionPoint(const QVector3D &lineA, const QVector3D &lineB) const {
@@ -118,4 +149,31 @@ ostream &operator<<(ostream &os, const Triangulator &triangulator) {
 		cout << ", " << *it;
 	cout << "}" << endl;
 	return os;
+}
+
+const Triangulator Triangulator::tesselated(Map &vertices) const {
+	if (this->size() % 3) return *this;
+	if (vertices.size() > 200)
+		cout << END_MSG("The provided map contains more than 200 vertices, the triangulation might take long...") << endl;
+	for (auto it = this->begin(); it != this->end();){
+		QVector3D pointA = vertices.at(*it);
+		QVector3D pointB = vertices.at(*(it + 1));
+		QVector3D pointC = vertices.at(*(it + 2));
+
+		QVector3D centroid(
+			(pointA.x() + pointB.x() + pointC.x()) / 3,
+			(pointA.y() + pointB.y() + pointC.y()) / 3,
+			(pointA.z() + pointB.z() + pointC.z()) / 3);
+		vertices.append(centroid);
+		it = it + 3;
+	}
+	if (vertices.size() < 200)
+		return (Triangulator(vertices).tesselated(vertices));
+	return Triangulator(vertices);
+}
+
+Triangulator::Triangulator(const Triangulator& src) : QVector<unsigned int>(){
+	for (auto const & item: src){
+		this->append(item);
+	}
 }

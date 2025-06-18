@@ -50,6 +50,9 @@ public:
 	float	xRot;
 	float	yRot;
 	float	zRot;
+	float	xTrans;
+	float	yTrans;
+	float	zTrans;
 	QPoint	lastPos;
 public slots:
 	virtual void timeOutSlot();

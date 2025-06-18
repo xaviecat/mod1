@@ -4,16 +4,21 @@
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
-	, vertices(Map("resources/big_map.mod1"))
-	, indexArray(Triangulator(vertices))
+	, vertices(Map("resources/demo1.mod1"))
+	, indexArray(Triangulator(vertices).tesselated(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
 
 	distance = -2.5;
-	xRot = 30;
-	yRot = -40;
+	xRot = 0;
+	yRot = 0;
 	zRot = 0;
+
+	xTrans = 0;
+	yTrans = -0.5;
+	zTrans = 0;
+
 	mode = SHADERS;
 	fillMode = GL_FILL;
 	setWindowTitle("Draw Coordinate");
@@ -91,17 +96,17 @@ void OpenGLWidget::initializeShaders() {
 	program.bindAttributeLocation("aNormal", normalAttribute);
 	program.bindAttributeLocation("aTexCoords", textureAttribute);
 
-	// program.bind();
-	// program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	// program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
-	// program.release();
+	program.bind();
+	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
+	program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	program.release();
 }
 
 void OpenGLWidget::drawShaders() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, fillMode);
-	// glPolygonMode(GL_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT, fillMode);
+	glPolygonMode(GL_BACK, GL_LINE);
 
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);
@@ -153,6 +158,8 @@ void OpenGLWidget::refreshMVPMatrix() {
 	modelMatrix.rotate(xRot, 1.0f, 0.0f, 0.0f);
 	modelMatrix.rotate(yRot, 0.0f, 1.0f, 0.0f);
 	modelMatrix.rotate(zRot, 0.0f, 0.0f, 1.0f);
+
+	viewMatrix.translate(xTrans, yTrans, zTrans);
 
 	projectionMatrix.perspective(60.0f, width() / height(), 0.1f, 500.0f);
 
@@ -256,6 +263,14 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *keyEvent) {
 		fillMode = fillMode == GL_LINE ? GL_FILL : GL_LINE;
 	if (keyEvent->key() == Qt::Key_L)
 		animation = !animation;
+	if (keyEvent->key() == Qt::Key_W)
+		yTrans -= 0.1;
+	if (keyEvent->key() == Qt::Key_A)
+		xTrans += 0.1;
+	if (keyEvent->key() == Qt::Key_S)
+		yTrans += 0.1;
+	if (keyEvent->key() == Qt::Key_D)
+		xTrans -= 0.1;
 	// if (keyEvent->key() == Qt::Key_Up)
 	// 	if (delay < 50) ++delay;
 	// if (keyEvent->key() == Qt::Key_Down)
