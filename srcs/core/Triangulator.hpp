@@ -29,6 +29,7 @@ private:
 	const QPointF _getCircumCenter(const QVector3D& pointA, const QVector3D& pointB, const QVector3D& pointC) const;
 	bool _isInCircumCenter(const QVector3D& point, const QPointF& circumCenter, qreal radius) const;
 	void _triangulate(const Map& vertices, int threadId, int numThreads);
+	bool _isCCW(const QVector3D& a, const QVector3D& b, const QVector3D& c) const;
 
 	QMutex	_dataMutex;
 public:
