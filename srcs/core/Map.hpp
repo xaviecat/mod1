@@ -25,6 +25,7 @@ private:
 	float _offset;
 public:
 	explicit Map(const std::string& filename);
+	void sort();
 
 	friend std::ostream& operator<<(std::ostream& o, const Map& rhs);
 	void normalize();
