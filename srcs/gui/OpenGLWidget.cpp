@@ -11,12 +11,12 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
 
 	distance = -2.5;
-	xRot = 0;
-	yRot = 0;
+	xRot = 45;
+	yRot = -45;
 	zRot = 0;
 
 	xTrans = 0;
-	yTrans = -0.5;
+	yTrans = 0;
 	zTrans = 0;
 
 	mode = SHADERS;
@@ -143,7 +143,7 @@ void OpenGLWidget::drawShaders() {
 		if (light_alpha > 2 * M_PI) light_alpha -= 2 * M_PI;
 		program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
 	}
-
+	// std::cout << "rotation xyz: " << xRot << ", " << yRot << ", " << zRot << std::endl;
 	program.release();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -271,6 +271,14 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *keyEvent) {
 		yTrans += 0.1;
 	if (keyEvent->key() == Qt::Key_D)
 		xTrans -= 0.1;
+	if (keyEvent->key() == Qt::Key_Up)
+		xRot += 15;
+	if (keyEvent->key() == Qt::Key_Down)
+		xRot -= 15;
+	if (keyEvent->key() == Qt::Key_Left)
+		yRot += 15;
+	if (keyEvent->key() == Qt::Key_Right)
+		yRot -= 15;
 	// if (keyEvent->key() == Qt::Key_Up)
 	// 	if (delay < 50) ++delay;
 	// if (keyEvent->key() == Qt::Key_Down)
