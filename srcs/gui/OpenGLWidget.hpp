@@ -16,6 +16,8 @@
 # include <iostream>
 # include <QOpenGLBuffer>
 # include <QOpenGLShaderProgram>
+# include <QOpenGLVertexArrayObject>
+
 # define SIZE_MAP 5.0
 
 class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -28,10 +30,10 @@ public:
 	void resizeGL(int width, int height) override;
 	void paintGL() override;
 
-	void drawGizmo(QMatrix4x4 &mvpMatrix);
+	void drawGizmo();
 
 	void initializeUVMap();
-	void initializeBuffers();
+	void initializeVAO();
 	void initializeShaders();
 
 	void refreshMVPMatrix();
@@ -46,55 +48,61 @@ public:
 	void mouseMoveEvent(QMouseEvent *event) override;
 	void rotateBy(int x, int y, int z);
 
-	float	distance;
-	float	xRot;
-	float	yRot;
-	float	zRot;
-	float	xTrans;
-	float	yTrans;
-	float	zTrans;
-	QPoint	lastPos;
 public slots:
 	virtual void timeOutSlot();
+
 private:
-	QTimer		timer;
-	QTime		timeLastFrame;
-	int			frameCount;
-	int			lastCount;
-	int			delay;
+	// FPS Counter
+	QPoint	lastPos;
+	QTime	timeLastFrame;
+	QTimer	timer;
+	int		delay;
+	int		frameCount;
+	int		lastCount;
 
-	Map				vertices;
-	QString			modeName[4] = {
-		"Shaders drawing",
-		"Buffers drawing"
-	};
+	// MVP Matrix
+	QMatrix4x4	mvpMatrix;
+	float		distance;
+	float		xRot;
+	float		yRot;
+	float		zRot;
+	float		xTrans;
+	float		yTrans;
+	float		zTrans;
+
+	// Light animation
+	bool	animation;
+	float	light_alpha;
+
+	// Rendering Mode
+	QString				renderingMode[2] = {"Shaders drawing", "Buffers drawing"};
 	enum eRenderingMode	{SHADERS, BUFFERS};
-
 	eRenderingMode		mode;
 	int					fillMode;
+
+	// Mesh
+	Map					vertices;
 	Triangulator		indexArray;
 	QVector<QVector2D>	UVMap;
-
-	QMatrix4x4			mvpMatrix;
-
-	QOpenGLBuffer		vertexBuffer;
-	QOpenGLBuffer		indexBuffer;
-	QOpenGLBuffer		normalBuffer;
-	QOpenGLBuffer		textureBuffer;
-
-	QOpenGLTexture		*texture;
-
 	QVector<QVector3D>	normales;
 
-	//Shader zone
+	// Mesh Rendering
+	QOpenGLVertexArrayObject	terrainVAO;
+	QOpenGLBuffer				vertexBuffer;
+	QOpenGLBuffer				indexBuffer;
+	QOpenGLBuffer				textureBuffer;
+	QOpenGLBuffer				normalBuffer;
+
+	// Shaders and Attributes and Uniforms location
 	QOpenGLShaderProgram	program;
 	int						matrixLocation;
 	int						textureLocation;
-
+	int						lightDirectionLocation;
+	int						ambientColorLocation;
 	enum eAttributeLocation	{ vertexAttribute, normalAttribute, textureAttribute};
 
-	bool					animation = false;
-	float					light_alpha = 0;
+	// Texture handling
+	QOpenGLTexture	*texture;
 };
 
 #endif //TEST_HPP

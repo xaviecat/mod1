@@ -9,7 +9,7 @@ in vec3 worldNormal;
 
 // Uniforms from cpp
 uniform vec4 light_direction;
-uniform vec4 ambiant_color;
+uniform vec4 ambient_color;
 uniform sampler2D texture2d;
 
 //Outputs for GPU
@@ -21,7 +21,7 @@ void main(void)
 
     vec3 baseColor = vec3(1.0, 1.0, 1.0);
 
-    vec3 ambient = ambiant_color.rgb;
+    vec3 ambient = ambient_color.rgb;
     vec3 diffuseColor = diffuse * baseColor * 0.8;
 
     vec4 texColor = texture(texture2d, vTexCoord.st);

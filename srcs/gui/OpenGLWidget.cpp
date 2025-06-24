@@ -4,47 +4,89 @@
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
 	: QOpenGLWidget(parent)
+	, delay(10)
+	, frameCount(0)
+	, lastCount(0)
+	, distance(-2.5)
+	, xRot(45)
+	, yRot(-45)
+	, zRot(0)
+	, xTrans(0)
+	, yTrans(0)
+	, zTrans(0)
+	, animation(false)
+	, light_alpha(0)
+	, mode(SHADERS)
+	, fillMode(GL_FILL)
 	, vertices(Map("resources/demo1.mod1"))
 	, indexArray(Triangulator(vertices).tesselated(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
-	, indexBuffer(QOpenGLBuffer::IndexBuffer) {
+	, indexBuffer(QOpenGLBuffer::IndexBuffer)
+	, textureBuffer(QOpenGLBuffer::VertexBuffer)
+	, normalBuffer(QOpenGLBuffer::VertexBuffer) {
 	std::cout << C_MSG("Test parametric constructor called") << std::endl;
 
-	distance = -2.5;
-	xRot = 45;
-	yRot = -45;
-	zRot = 0;
-
-	xTrans = 0;
-	yTrans = 0;
-	zTrans = 0;
-
-	mode = SHADERS;
-	fillMode = GL_FILL;
 	setWindowTitle("Draw Coordinate");
 
 	vertices.normalize();
 	initializeUVMap();
 
 	// setup display refresh
-	connect(&timer, &QTimer::timeout, this, &OpenGLWidget::timeOutSlot);
-	delay = 0;
 	timer.start(delay);
-	frameCount = 0;
-	lastCount = 0;
+	connect(&timer, &QTimer::timeout, this, &OpenGLWidget::timeOutSlot);
 	timeLastFrame = QTime::currentTime();
 }
 
 void OpenGLWidget::initializeGL() {
 	initializeOpenGLFunctions();
 
+	std::cout << glGetString(GL_VENDOR) << std::endl;
+	std::cout << glGetString(GL_RENDERER) << std::endl;
+	std::cout << glGetString(GL_VERSION) << std::endl;
+	std::cout << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+
 	texture = new QOpenGLTexture(QImage("textures/rock.jpg").flipped());
 	texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
 	texture->setMagnificationFilter(QOpenGLTexture::Linear);
 
 	normales = indexArray.normales;
-	initializeBuffers();
 	initializeShaders();
+	initializeVAO();
+}
+
+void OpenGLWidget::initializeVAO() {
+	// VAO
+	terrainVAO.create();
+	terrainVAO.bind();
+
+	// VBO
+	vertexBuffer.create();
+	vertexBuffer.bind();
+	vertexBuffer.allocate(vertices.constData(), vertices.size() * sizeof(QVector3D));
+	glEnableVertexAttribArray(vertexAttribute);
+	glVertexAttribPointer(vertexAttribute, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// VBO
+	normalBuffer.create();
+	normalBuffer.bind();
+	normalBuffer.allocate(normales.constData(), normales.size() * sizeof(QVector3D));
+	glEnableVertexAttribArray(normalAttribute);
+	glVertexAttribPointer(normalAttribute, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// VBO
+	textureBuffer.create();
+	textureBuffer.bind();
+	textureBuffer.allocate(UVMap.constData(), UVMap.size() * sizeof(QVector3D));
+	glEnableVertexAttribArray(textureAttribute);
+	glVertexAttribPointer(textureAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// EBO
+	indexBuffer.create();
+	indexBuffer.bind();
+	indexBuffer.allocate(indexArray.constData(), indexArray.size() * sizeof(GLuint));
+
+	terrainVAO.release();
+	std::cout << "Terrain VAO initialized with " << vertices.size() << " vertices, " << indexArray.size() << " indices" << std::endl;
 }
 
 void OpenGLWidget::paintGL() {
@@ -59,7 +101,7 @@ void OpenGLWidget::paintGL() {
 		break;
 	}
 
-	drawGizmo(mvpMatrix);
+	drawGizmo();
 
 	++frameCount;
 	QTime	actualTime = QTime::currentTime();
@@ -79,7 +121,7 @@ void OpenGLWidget::paintEvent(QPaintEvent *event) {
 	painter.drawText(10, 30, "Spacebar to change transfer mode");
 	// painter.drawText(10, 45, "Press T to draw on/off texture");
 	// painter.drawText(10, 60, "Press F to fill on/off");
-	painter.drawText(10, height()-15, QString("%1").arg(modeName[mode]));
+	painter.drawText(10, height()-15, QString("%1").arg(renderingMode[mode]));
 }
 
 void OpenGLWidget::initializeShaders() {
@@ -87,18 +129,26 @@ void OpenGLWidget::initializeShaders() {
 		std::cerr << program.log().toStdString() << std::endl;
 	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/terrain.frag"))
 		std::cerr << program.log().toStdString() << std::endl;
-	if (!program.link())
-		std::cerr << program.log().toStdString() << std::endl;
-
-	matrixLocation = program.uniformLocation("mvpmatrix");
 
 	program.bindAttributeLocation("aVertex", vertexAttribute);
 	program.bindAttributeLocation("aNormal", normalAttribute);
 	program.bindAttributeLocation("aTexCoords", textureAttribute);
 
+	if (!program.link())
+		std::cerr << program.log().toStdString() << std::endl;
+
+	matrixLocation = program.uniformLocation("mvpmatrix");
+	lightDirectionLocation = program.uniformLocation("light_direction");
+	ambientColorLocation = program.uniformLocation("ambient_color");
+	// textureLocation = program.uniformLocation("texture2d");
+
+	bool error = matrixLocation < 0 || lightDirectionLocation < 0 || ambientColorLocation < 0;// || textureLocation < 0;
+	if (error)
+		std::cerr << "Error while getting uniforms locations: " << matrixLocation << lightDirectionLocation << ambientColorLocation << std::endl;
+
 	program.bind();
-	program.setUniformValue("ambiant_color", QVector4D(0.4, 0.4, 0.4, 1.0));
-	program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+	program.setUniformValue(ambientColorLocation, QVector4D(0.4, 0.4, 0.4, 1.0));
+	program.setUniformValue(lightDirectionLocation, QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
 	program.release();
 }
 
@@ -111,39 +161,18 @@ void OpenGLWidget::drawShaders() {
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);
 
-	// glActiveTexture(GL_TEXTURE0);
-
-	vertexBuffer.bind();
-	program.enableAttributeArray(vertexAttribute);
-	program.setAttributeBuffer(vertexAttribute, GL_FLOAT, 0, 3);
-	vertexBuffer.release();
-
-	normalBuffer.bind();
-	program.enableAttributeArray(normalAttribute);
-	program.setAttributeBuffer(normalAttribute, GL_FLOAT, 0, 3);
-	normalBuffer.release();
-
-	textureBuffer.bind();
-	program.enableAttributeArray(textureAttribute);
-	program.setAttributeBuffer(textureAttribute, GL_FLOAT, 0, 2);
-	textureBuffer.release();
-
-	indexBuffer.bind();
 	texture->bind();
+	terrainVAO.bind();
 	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
+	terrainVAO.release();
 	texture->release();
-	indexBuffer.release();
-
-	program.disableAttributeArray(vertexAttribute);
-	program.disableAttributeArray(normalAttribute);
-	program.disableAttributeArray(textureAttribute);
 
 	if (animation) {
 		light_alpha += 0.02;
 		if (light_alpha > 2 * M_PI) light_alpha -= 2 * M_PI;
 		program.setUniformValue("light_direction", QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
 	}
-	// std::cout << "rotation xyz: " << xRot << ", " << yRot << ", " << zRot << std::endl;
+
 	program.release();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -166,28 +195,6 @@ void OpenGLWidget::refreshMVPMatrix() {
 	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 }
 
-void OpenGLWidget::initializeBuffers() {
-	vertexBuffer.create();
-	vertexBuffer.bind();
-	vertexBuffer.allocate(vertices.constData(), vertices.size() * sizeof(QVector3D));
-	vertexBuffer.release();
-
-	indexBuffer.create();
-	indexBuffer.bind();
-	indexBuffer.allocate(indexArray.constData(), indexArray.size() * sizeof(GLuint));
-	indexBuffer.release();
-
-	normalBuffer.create();
-	normalBuffer.bind();
-	normalBuffer.allocate(normales.constData(), normales.size() * sizeof(QVector3D));
-	normalBuffer.release();
-
-	textureBuffer.create();
-	textureBuffer.bind();
-	textureBuffer.allocate(UVMap.constData(), UVMap.size() * sizeof(QVector3D));
-	textureBuffer.release();
-}
-
 void OpenGLWidget::drawBuffers() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -206,7 +213,6 @@ void OpenGLWidget::drawBuffers() {
 	indexBuffer.release();
 
 	glDisableClientState(GL_VERTEX_ARRAY);
-
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
@@ -220,7 +226,7 @@ void OpenGLWidget::initializeUVMap() {
 	}
 }
 
-void OpenGLWidget::drawGizmo(QMatrix4x4 &mvpMatrix) {
+void OpenGLWidget::drawGizmo() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(mvpMatrix.constData());
 
@@ -257,33 +263,31 @@ void OpenGLWidget::resizeGL(int width, int height) {
 void OpenGLWidget::keyPressEvent(QKeyEvent *keyEvent) {
 	if (keyEvent->key() == Qt::Key_Escape)
 		close();
-	if (keyEvent->key() == Qt::Key_Space)
+	else if (keyEvent->key() == Qt::Key_Space)
 		mode  = static_cast<eRenderingMode>((mode + 1) % 2);
-	if (keyEvent->key() == Qt::Key_F)
+	else if (keyEvent->key() == Qt::Key_F)
 		fillMode = fillMode == GL_LINE ? GL_FILL : GL_LINE;
-	if (keyEvent->key() == Qt::Key_L)
+	else if (keyEvent->key() == Qt::Key_L)
 		animation = !animation;
-	if (keyEvent->key() == Qt::Key_W)
+	else if (keyEvent->key() == Qt::Key_W)
 		yTrans -= 0.1;
-	if (keyEvent->key() == Qt::Key_A)
+	else if (keyEvent->key() == Qt::Key_A)
 		xTrans += 0.1;
-	if (keyEvent->key() == Qt::Key_S)
+	else if (keyEvent->key() == Qt::Key_S)
 		yTrans += 0.1;
-	if (keyEvent->key() == Qt::Key_D)
+	else if (keyEvent->key() == Qt::Key_D)
 		xTrans -= 0.1;
-	if (keyEvent->key() == Qt::Key_Up)
+	else if (keyEvent->key() == Qt::Key_Up)
 		xRot += 15;
-	if (keyEvent->key() == Qt::Key_Down)
+	else if (keyEvent->key() == Qt::Key_Down)
 		xRot -= 15;
-	if (keyEvent->key() == Qt::Key_Left)
+	else if (keyEvent->key() == Qt::Key_Left)
 		yRot += 15;
-	if (keyEvent->key() == Qt::Key_Right)
+	else if (keyEvent->key() == Qt::Key_Right)
 		yRot -= 15;
-	// if (keyEvent->key() == Qt::Key_Up)
-	// 	if (delay < 50) ++delay;
-	// if (keyEvent->key() == Qt::Key_Down)
-	// 	if (delay > 0) --delay;
-	// 		timer.start(delay);
+	else {
+		std::cout << std::hex << keyEvent->key() << std::endl;
+	}
 }
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event) {
@@ -307,9 +311,9 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void OpenGLWidget::rotateBy(int x, int y, int z) {
-	xRot += x;
-	yRot += y;
-	zRot += z;
+	xRot += x / 15;
+	yRot += y / 15;
+	zRot += z / 15;
 }
 
 void OpenGLWidget::timeOutSlot() {
