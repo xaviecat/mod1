@@ -3,8 +3,9 @@
 Triangulator::Triangulator(const Map &vertices) {
 	normales.resize(vertices.size());
 
+#ifndef __EMSCRIPTEN__
 	int numThreads = QThread::idealThreadCount();
-	cout << "Ideal thread count: " << numThreads << endl;
+	// cout << "Ideal thread count: " << numThreads << endl;
 	QVector<QFuture<void>> futures;
 
 	for (int thread = 0; thread < numThreads; ++thread) {
@@ -17,6 +18,10 @@ Triangulator::Triangulator(const Map &vertices) {
 	for (auto& future : futures) {
 		future.waitForFinished();
 	}
+#else
+	_triangulate(vertices, 0, 1);
+#endif
+
 }
 
 void Triangulator::_triangulate(const Map &vertices, int threadId, int numThreads){
@@ -48,8 +53,9 @@ void Triangulator::_triangulate(const Map &vertices, int threadId, int numThread
 			}
 		}
 	}
-
+#ifndef __EMSCRIPTEN__
 	QMutexLocker locker(&_dataMutex);
+#endif
 	for (const auto& triangle : localTriangles) {
 		if (_isCCW(vertices.at(triangle.i1), vertices.at(triangle.i2), vertices.at(triangle.i3))){
 			this->append(triangle.i1);

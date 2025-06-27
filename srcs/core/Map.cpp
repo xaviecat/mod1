@@ -1,17 +1,24 @@
 #include "Map.hpp"
+#include <QFile>
+#include <QTextStream>
 
 Map::Map(const std::string& filename) {
-	std::ifstream	infile(filename);
-	std::string		vertex;
 
-	if (!infile.is_open())
+	QFile infile(QString(filename.data()));
+
+	if (!infile.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		throw std::runtime_error(ERR_OPEN(filename));
-	bool first = true;
-	while (!infile.eof()){
-		infile >> vertex;
-		if (infile.eof()) break;
+	}
 
-		QVector3D	res = Map::_parseVertex(vertex, first);
+	QTextStream in(&infile);
+	QString vertex;
+
+	bool first = true;
+	while (!in.atEnd()) {
+		in >> vertex;
+		if (vertex.isEmpty()) continue;
+
+		QVector3D	res = Map::_parseVertex(vertex.toStdString(), first);
 		if (!_checkDup(res))
 			this->append(res);
 		first = false;
@@ -23,7 +30,7 @@ Map::Map(const std::string& filename) {
 	_addCorners();
 
 	int i = 0;
-	for (auto &item:*this){
+	for (auto &item: *this){
 		if (i % 2)
 			item.setX(item.x() + 0.2);
 		else
@@ -137,7 +144,7 @@ void Map::normalize() {
 }
 
 void Map::sort() {
-	cout << *this << endl << endl;
+	// cout << *this << endl << endl;
 	for (int i = 0; i < this->size() - 1;){
 		if (this->at(i).x() > this->at(i + 1).x()){
 			this->swapItemsAt(i, i + 1);
@@ -154,6 +161,6 @@ void Map::sort() {
 		else
 			++i;
 	}
-	cout << *this << endl;
-	cout << endl;
+	// cout << *this << endl;
+	// cout << endl;
 }

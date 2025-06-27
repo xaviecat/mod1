@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>maps/big_map.mod1</file>
+        <file>maps/big_map2.mod1</file>
+        <file>maps/demo1.mod1</file>
+        <file>maps/demo2.mod1</file>
+        <file>maps/demo3.mod1</file>
+        <file>maps/demo4.mod1</file>
+        <file>maps/demo5.mod1</file>
+        <file>shaders/desktop/terrain.frag</file>
+        <file>shaders/desktop/terrain.vert</file>
+        <file>shaders/web/terrain.frag</file>
+        <file>shaders/web/terrain.vert</file>
+        <file>textures/bedrock.jpg</file>
+        <file>textures/grass.jpg</file>
+        <file>textures/rock.jpg</file>
+        <file>textures/snow.jpg</file>
+    </qresource>
+</RCC>

@@ -17,8 +17,10 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 	, animation(false)
 	, light_alpha(0)
 	, mode(SHADERS)
+#ifndef __EMSCRIPTEN__
 	, fillMode(GL_FILL)
-	, vertices(Map("resources/demo1.mod1"))
+#endif
+	, vertices(Map(":/maps/demo1.mod1"))
 	, indexArray(Triangulator(vertices).tesselated(vertices))
 	, vertexBuffer(QOpenGLBuffer::VertexBuffer)
 	, indexBuffer(QOpenGLBuffer::IndexBuffer)
@@ -45,7 +47,7 @@ void OpenGLWidget::initializeGL() {
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	std::cout << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-	texture = new QOpenGLTexture(QImage("textures/rock.jpg").flipped());
+	texture = new QOpenGLTexture(QImage(":/textures/rock.jpg").flipped());
 	texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
 	texture->setMagnificationFilter(QOpenGLTexture::Linear);
 
@@ -59,26 +61,36 @@ void OpenGLWidget::initializeVAO() {
 	terrainVAO.create();
 	terrainVAO.bind();
 
-	// VBO
+	// Vertex VBO
 	vertexBuffer.create();
 	vertexBuffer.bind();
 	vertexBuffer.allocate(vertices.constData(), vertices.size() * sizeof(QVector3D));
 	glEnableVertexAttribArray(vertexAttribute);
 	glVertexAttribPointer(vertexAttribute, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	// VBO
+	// Normal VBO
 	normalBuffer.create();
 	normalBuffer.bind();
 	normalBuffer.allocate(normales.constData(), normales.size() * sizeof(QVector3D));
 	glEnableVertexAttribArray(normalAttribute);
 	glVertexAttribPointer(normalAttribute, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	// VBO
+	// Texture VBO
 	textureBuffer.create();
 	textureBuffer.bind();
 	textureBuffer.allocate(UVMap.constData(), UVMap.size() * sizeof(QVector3D));
 	glEnableVertexAttribArray(textureAttribute);
 	glVertexAttribPointer(textureAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// Barycentric VBO
+#ifdef __EMSCRIPTEN__
+	generateBarycentricCoordinates();
+	barycentricBuffer.create();
+	barycentricBuffer.bind();
+	barycentricBuffer.allocate(barycentricCoords.constData(), barycentricCoords.size() * sizeof(QVector3D));
+	glEnableVertexAttribArray(barycentricAttribute);
+	glVertexAttribPointer(barycentricAttribute, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+#endif
 
 	// EBO
 	indexBuffer.create();
@@ -86,8 +98,25 @@ void OpenGLWidget::initializeVAO() {
 	indexBuffer.allocate(indexArray.constData(), indexArray.size() * sizeof(GLuint));
 
 	terrainVAO.release();
-	std::cout << "Terrain VAO initialized with " << vertices.size() << " vertices, " << indexArray.size() << " indices" << std::endl;
+	// std::cout << "Terrain VAO initialized with " << vertices.size() << " vertices, " << indexArray.size() << " indices" << std::endl;
 }
+
+#ifdef __EMSCRIPTEN__
+void OpenGLWidget::generateBarycentricCoordinates() {
+	barycentricCoords.clear();
+	barycentricCoords.reserve(vertices.size());
+
+	// For each triangle, assign barycentric coordinates (1,0,0), (0,1,0), (0,0,1)
+	for (int i = 0; i < indexArray.size(); i += 3) {
+		// This is a simplified approach - you might need to adjust based on your indexing
+		for (int j = 0; j < vertices.size(); ++j) {
+			if (j % 3 == 0) barycentricCoords.append(QVector3D(1.0f, 0.0f, 0.0f));
+			else if (j % 3 == 1) barycentricCoords.append(QVector3D(0.0f, 1.0f, 0.0f));
+			else barycentricCoords.append(QVector3D(0.0f, 0.0f, 1.0f));
+		}
+	}
+}
+#endif
 
 void OpenGLWidget::paintGL() {
 	refreshMVPMatrix();
@@ -97,11 +126,15 @@ void OpenGLWidget::paintGL() {
 		drawShaders();
 		break;
 	case BUFFERS:
+#ifndef __EMSCRIPTEN__
 		drawBuffers();
+#endif
 		break;
 	}
 
+#ifndef __EMSCRIPTEN__
 	drawGizmo();
+#endif
 
 	++frameCount;
 	QTime	actualTime = QTime::currentTime();
@@ -125,14 +158,23 @@ void OpenGLWidget::paintEvent(QPaintEvent *event) {
 }
 
 void OpenGLWidget::initializeShaders() {
-	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/terrain.vert"))
+#ifndef __EMSCRIPTEN__
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/desktop/terrain.vert"))
 		std::cerr << program.log().toStdString() << std::endl;
-	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/terrain.frag"))
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/desktop/terrain.frag"))
 		std::cerr << program.log().toStdString() << std::endl;
-
+#else
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/web/terrain.vert"))
+		std::cerr << program.log().toStdString() << std::endl;
+	if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/web/terrain.frag"))
+		std::cerr << program.log().toStdString() << std::endl;
+#endif
 	program.bindAttributeLocation("aVertex", vertexAttribute);
 	program.bindAttributeLocation("aNormal", normalAttribute);
 	program.bindAttributeLocation("aTexCoords", textureAttribute);
+#ifdef __EMSCRIPTEN__
+	program.bindAttributeLocation("aBarycentric", barycentricAttribute);
+#endif
 
 	if (!program.link())
 		std::cerr << program.log().toStdString() << std::endl;
@@ -141,6 +183,11 @@ void OpenGLWidget::initializeShaders() {
 	lightDirectionLocation = program.uniformLocation("light_direction");
 	ambientColorLocation = program.uniformLocation("ambient_color");
 	// textureLocation = program.uniformLocation("texture2d");
+#ifdef __EMSCRIPTEN__
+	wireframeModeLocation = program.uniformLocation("wireframe_mode");
+	wireframeColorLocation = program.uniformLocation("wireframe_color");
+	wireframeWidthLocation = program.uniformLocation("wireframe_width");
+#endif
 
 	bool error = matrixLocation < 0 || lightDirectionLocation < 0 || ambientColorLocation < 0;// || textureLocation < 0;
 	if (error)
@@ -149,21 +196,29 @@ void OpenGLWidget::initializeShaders() {
 	program.bind();
 	program.setUniformValue(ambientColorLocation, QVector4D(0.4, 0.4, 0.4, 1.0));
 	program.setUniformValue(lightDirectionLocation, QVector4D(cos(light_alpha), 1.0, sin(light_alpha), 1.0));
+#ifdef __EMSCRIPTEN__
+	program.setUniformValue(wireframeModeLocation, wireframeMode);
+	program.setUniformValue(wireframeColorLocation, QVector3D(1.0, 1.0, 1.0)); // White wireframe
+	program.setUniformValue(wireframeWidthLocation, 1.0f);
+#endif
 	program.release();
 }
 
 void OpenGLWidget::drawShaders() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#ifndef __EMSCRIPTEN__
 	glPolygonMode(GL_FRONT, fillMode);
-	glPolygonMode(GL_BACK, GL_LINE);
-
+	glPolygonMode(GL_BACK, GL_LINES);
+#endif
 	program.bind();
 	program.setUniformValue(matrixLocation, mvpMatrix);
 
 	texture->bind();
 	terrainVAO.bind();
+
 	glDrawElements(GL_TRIANGLES, indexArray.size(), GL_UNSIGNED_INT, nullptr);
+
 	terrainVAO.release();
 	texture->release();
 
@@ -174,7 +229,9 @@ void OpenGLWidget::drawShaders() {
 	}
 
 	program.release();
+#ifndef __EMSCRIPTEN__
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
 }
 
 void OpenGLWidget::refreshMVPMatrix() {
@@ -195,6 +252,7 @@ void OpenGLWidget::refreshMVPMatrix() {
 	mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 }
 
+#ifndef __EMSCRIPTEN__
 void OpenGLWidget::drawBuffers() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -215,6 +273,7 @@ void OpenGLWidget::drawBuffers() {
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+#endif
 
 void OpenGLWidget::initializeUVMap() {
 	for (auto vertex: vertices) {
@@ -226,6 +285,7 @@ void OpenGLWidget::initializeUVMap() {
 	}
 }
 
+#ifndef __EMSCRIPTEN__
 void OpenGLWidget::drawGizmo() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(mvpMatrix.constData());
@@ -255,6 +315,7 @@ void OpenGLWidget::drawGizmo() {
 	}
 	glEnd();
 }
+#endif
 
 void OpenGLWidget::resizeGL(int width, int height) {
 	glViewport(0,0, width, height);
@@ -265,8 +326,10 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *keyEvent) {
 		close();
 	else if (keyEvent->key() == Qt::Key_Space)
 		mode  = static_cast<eRenderingMode>((mode + 1) % 2);
+#ifndef __EMSCRIPTEN__
 	else if (keyEvent->key() == Qt::Key_F)
 		fillMode = fillMode == GL_LINE ? GL_FILL : GL_LINE;
+#endif
 	else if (keyEvent->key() == Qt::Key_L)
 		animation = !animation;
 	else if (keyEvent->key() == Qt::Key_W)
@@ -322,4 +385,5 @@ void OpenGLWidget::timeOutSlot() {
 
 OpenGLWidget::~OpenGLWidget() {
 	std::cout << C_MSG("Test destructor called") << std::endl;
+	delete texture;
 }

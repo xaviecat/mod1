@@ -17,7 +17,7 @@
 # include <QOpenGLBuffer>
 # include <QOpenGLShaderProgram>
 # include <QOpenGLVertexArrayObject>
-
+// #define __EMSCRIPTEN__ 1
 # define SIZE_MAP 5.0
 
 class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -30,7 +30,19 @@ public:
 	void resizeGL(int width, int height) override;
 	void paintGL() override;
 
+
+#ifndef __EMSCRIPTEN__
 	void drawGizmo();
+	void drawBuffers();
+#else
+	void generateBarycentricCoordinates();
+	QVector<QVector3D> barycentricCoords;
+	bool wireframeMode = true;
+	QOpenGLBuffer barycentricBuffer;
+	int wireframeModeLocation = -1;
+	int wireframeColorLocation = -1;
+	int wireframeWidthLocation = -1;
+#endif
 
 	void initializeUVMap();
 	void initializeVAO();
@@ -38,7 +50,6 @@ public:
 
 	void refreshMVPMatrix();
 
-	void drawBuffers();
 	void drawShaders();
 
 	void paintEvent(QPaintEvent *event) override;
@@ -99,7 +110,7 @@ private:
 	int						textureLocation;
 	int						lightDirectionLocation;
 	int						ambientColorLocation;
-	enum eAttributeLocation	{ vertexAttribute, normalAttribute, textureAttribute};
+	enum eAttributeLocation	{ vertexAttribute, normalAttribute, textureAttribute, barycentricAttribute};
 
 	// Texture handling
 	QOpenGLTexture	*texture;

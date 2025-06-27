@@ -2,9 +2,12 @@
 # define TRIANGULATOR_HPP
 
 # include <QVector>
+#ifndef __EMSCRIPTEN__
 # include <QtConcurrent>
 # include <QFuture>
 # include <QMutex>
+#endif
+
 # include "../utils/colors.h"
 # include <ostream>
 # include "Map.hpp"
@@ -31,7 +34,10 @@ private:
 	void _triangulate(const Map& vertices, int threadId, int numThreads);
 	bool _isCCW(const QVector3D& a, const QVector3D& b, const QVector3D& c) const;
 
+#ifndef __EMSCRIPTEN__
 	QMutex	_dataMutex;
+#endif
+
 public:
 	Triangulator(const Map& vertices);
 	QVector<QVector3D> normales;
